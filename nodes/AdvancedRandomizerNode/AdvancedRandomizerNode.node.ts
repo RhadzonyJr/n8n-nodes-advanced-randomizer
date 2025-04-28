@@ -26,7 +26,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		inputs: 'main',
 
 
-		outputs: ['main', 'main', 'main', 'main', 'main'],
+		outputs: ['1', '2', '3', '4', '5'],
 
 		properties: <INodeProperties[]>[
 			{
