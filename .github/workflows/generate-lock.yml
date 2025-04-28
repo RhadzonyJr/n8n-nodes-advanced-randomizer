@@ -3,9 +3,6 @@ name: Generate package-lock
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   lock:
     runs-on: ubuntu-latest
@@ -22,9 +19,8 @@ jobs:
       - name: Generate package-lock.json
         run: npm install --package-lock-only
 
-      - name: Commit & Push package-lock.json
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'package-lock.json --force'
-          message: 'ci: add/update package-lock'
-          github_token: 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
+      - name: Show package-lock.json content
+        run: |
+          echo "======== BEGIN package-lock.json ========"
+          cat package-lock.json
+          echo "======== END package-lock.json =========="
