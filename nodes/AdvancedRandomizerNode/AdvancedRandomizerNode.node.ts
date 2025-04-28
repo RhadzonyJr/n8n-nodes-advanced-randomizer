@@ -4,8 +4,8 @@
  *
  * Routes incoming items to multiple outputs using one of three strategies:
  *  • Pure Random   – each item goes to a random output with equal probability
- *  • Percentage    – weighted random based on user-defined percentages per output
- *  • Sequential    – round-robin cycling through outputs in a stable order
+ *  • Percentage    – weighted random based on user‑defined percentages per output
+ *  • Sequential    – round‑robin cycling through outputs in a stable order
  */
 
 import {
@@ -25,7 +25,7 @@ import {
  * Type helpers
  */
 interface OutputPercentage extends IDataObject {
-  output: number; // 1-based index
+  output: number; // 1‑based index
   percentage: number; // 0–100
 }
 
@@ -64,7 +64,7 @@ export class AdvancedRandomizerNode implements INodeType {
           {
             name: 'Sequential',
             value: 'sequential',
-            description: 'Round-robin through outputs (1-N, repeat)',
+            description: 'Round‑robin through outputs (1‑N, repeat)',
           },
         ],
         default: 'pureRandom',
@@ -79,9 +79,9 @@ export class AdvancedRandomizerNode implements INodeType {
           maxValue: 10,
         },
         default: 2,
-        description: 'How many outputs should the node expose? (2-10) — remember to add the corresponding connections in the UI',
+        description: 'How many outputs should the node expose? (2‑10) — remember to add the corresponding connections in the UI',
       },
-      // ---------- Percentage strategy sub-collection ----------
+      // ---------- Percentage strategy sub‑collection ----------
       {
         displayName: 'Percentages',
         name: 'percentages',
@@ -105,7 +105,7 @@ export class AdvancedRandomizerNode implements INodeType {
                   minValue: 1,
                   maxValue: 10,
                 },
-                description: '1-based index of the output',
+                description: '1‑based index of the output',
               },
               {
                 displayName: 'Percentage',
@@ -117,7 +117,7 @@ export class AdvancedRandomizerNode implements INodeType {
                   maxValue: 100,
                   step: 1,
                 },
-                description: 'Weight (0-100). All entries must sum to 100%',
+                description: 'Weight (0‑100). All entries must sum to 100%',
               },
             ],
           },
@@ -152,7 +152,7 @@ export class AdvancedRandomizerNode implements INodeType {
       staticData.nextIndex = 0;
     }
 
-    // Pre-calculate cumulative percentage ranges if needed
+    // Pre‑calculate cumulative percentage ranges if needed
     let ranges: { end: number; index: number }[] = [];
     if (strategy === 'percentage') {
       const percentageEntries = (this.getNodeParameter('percentages', 0, []) as IDataObject[]) as OutputPercentage[];
@@ -175,7 +175,7 @@ export class AdvancedRandomizerNode implements INodeType {
     const items = this.getInputData();
     for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
       const item = items[itemIndex];
-      let targetIndex = 0; // zero-based index of output
+      let targetIndex = 0; // zero‑based index of output
 
       switch (strategy) {
         case 'pureRandom':
