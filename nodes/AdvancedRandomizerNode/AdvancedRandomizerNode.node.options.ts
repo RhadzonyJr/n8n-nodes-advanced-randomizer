@@ -1,7 +1,7 @@
 import { INodeProperties } from 'n8n-workflow';
 
 /**
- * Parâmetros exibidos no Editor do n8n.
+ * Parâmetros exibidos no editor do n8n.
  */
 export const advancedRandomizerNodeOptions: INodeProperties[] = [
 	{
@@ -14,7 +14,7 @@ export const advancedRandomizerNodeOptions: INodeProperties[] = [
 			{ name: 'Sequential', value: 'sequential' },
 		],
 		default: 'random',
-		description: 'Como a saída será escolhida.',
+		description: 'Como a saída será escolhida',          // ← sem ponto final
 	},
 	{
 		displayName: 'Outputs',
@@ -46,7 +46,8 @@ export const advancedRandomizerNodeOptions: INodeProperties[] = [
 						typeOptions: { minValue: 0, maxValue: 100 },
 						default: 0,
 						displayOptions: { show: { '/selectionMethod': ['percentage'] } },
-						description: 'Probabilidade para esta saída (usa-se apenas em “Percentage”).',
+						description:
+							'Probabilidade para esta saída (usado apenas em “Percentage”)', // ← sem ponto final
 					},
 				],
 			},

@@ -4,6 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	NodeConnectionType,
+	NodeOperationError,          // ← adicionado
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
@@ -18,10 +19,9 @@ export class AdvancedRandomizerNode implements INodeType {
 		group: ['transform'],
 		version: 1,
 		description:
-			'Route executions randomly, by percentage, or sequentially to multiple outputs.',
+			'Route executions randomly, by percentage, or sequentially to multiple outputs',
 		defaults: { name: 'Advanced Randomizer' },
 
-		// 👉 1 entrada + 10 saídas “físicas” (tipadas como NodeConnectionType[])
 		inputs: ['main'] as NodeConnectionType[],
 		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main' as NodeConnectionType) as NodeConnectionType[],
 
@@ -38,14 +38,17 @@ export class AdvancedRandomizerNode implements INodeType {
 		) as { outputName: string; percentage?: number }[];
 
 		if (cfgOutputs.length < 2) {
-			throw new Error('Configure ao menos duas saídas em “Outputs”.');
+			throw new NodeOperationError(this.getNode(), 'Configure ao menos duas saídas em “Outputs”');
 		}
 
 		/* ------------ valida porcentagens --------- */
 		if (method === 'percentage') {
 			const total = cfgOutputs.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
 			if (Math.abs(total - 100) > 0.01) {
-				throw new Error(`A soma das porcentagens deve ser 100 %. Valor atual: ${total} %.`);
+				throw new NodeOperationError(
+					this.getNode(),
+					`A soma das porcentagens deve ser 100 %. Valor atual: ${total} %`,
+				);
 			}
 		}
 
