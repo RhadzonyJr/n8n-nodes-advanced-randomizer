@@ -3,47 +3,55 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeParameterValue,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
+
+/**
+ * Máximo de saídas físicas que vamos anunciar para o n8n.
+ * O usuário pode habilitar entre 2-10 no parâmetro “Outputs”.
+ */
+const MAX_OUTPUTS = 10;
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizerNode',
-		icon: 'file:randomizerNode.svg',
+		icon: 'fa:random',
 		group: ['transform'],
 		version: 1,
 		description:
 			'Route executions randomly, by percentage, or sequentially to multiple outputs.',
-		defaults: {
-			name: 'Advanced Randomizer',
-		},
-		/**
-		 * ► ⚠️ API ≥ 1.30 — `inputs` / `outputs` agora são objetos `{ resource: "main" }`
+		defaults: { name: 'Advanced Randomizer' },
+
+		/*
+		 * 1 entrada física e 10 saídas físicas para satisfazer o compilador.
+		 * Durante a execução cortamos para o número que o usuário configurou.
 		 */
-		inputs: [{ resource: 'main' }],
-		outputs: [{ resource: 'main' }],
+		inputs: ['main'],
+		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main'),
+
 		properties: advancedRandomizerNodeOptions,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
+		const items        = this.getInputData();
+		const method       = this.getNodeParameter('selectionMethod', 0) as string;
 
-		const selectionMethod = this.getNodeParameter('selectionMethod', 0) as NodeParameterValue;
-		const configuredOutputs = this.getNodeParameter('outputs', 0, []) as {
-			outputName: string;
-			percentage?: number;
-		}[];
+		const cfgOutputs   = this.getNodeParameter(
+			'outputs',
+			0,
+			[],
+		) as { outputName: string; percentage?: number }[];
 
-		/* ---------- validação (Percentage) ---------- */
-		if (selectionMethod === 'percentage') {
-			const total = configuredOutputs.reduce(
-				(sum, o) => sum + (o.percentage ?? 0),
-				0,
-			);
-			if (Math.abs(total - 100) > 0.001) {
+		if (cfgOutputs.length < 2) {
+			throw new Error('Please configure at least two outputs.');
+		}
+
+		/* ------- validação de porcentagens -------- */
+		if (method === 'percentage') {
+			const total = cfgOutputs.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
+			if (Math.abs(total - 100) > 0.01) {
 				throw new Error(
 					`The total percentage across all outputs must equal 100 %. Current total: ${total.toFixed(
 						2,
@@ -52,49 +60,49 @@ export class AdvancedRandomizerNode implements INodeType {
 			}
 		}
 
-		/* ---------- prepara buffer de saída ---------- */
-		const returnData: INodeExecutionData[][] = Array.from(
-			{ length: configuredOutputs.length },
+		/* ------- inicializa vetor de saídas ------- */
+		const buckets: INodeExecutionData[][] = Array.from(
+			{ length: MAX_OUTPUTS },
 			() => [],
 		);
 
-		/* ---------- Random ---------- */
-		if (selectionMethod === 'random') {
+		/* -------------- Random -------------------- */
+		if (method === 'random') {
 			for (const item of items) {
-				const idx = Math.floor(Math.random() * configuredOutputs.length);
-				returnData[idx].push(item);
+				const idx = Math.floor(Math.random() * cfgOutputs.length);
+				buckets[idx].push(item);
 			}
 		}
 
-		/* ---------- Percentage ---------- */
-		if (selectionMethod === 'percentage') {
-			const ranges: { upper: number; idx: number }[] = [];
+		/* ------------ Percentage ------------------ */
+		if (method === 'percentage') {
+			// cria ranges cumulativos 0-100
 			let acc = 0;
-			configuredOutputs.forEach((o, i) => {
+			const ranges = cfgOutputs.map((o, i) => {
 				acc += o.percentage ?? 0;
-				ranges.push({ upper: acc, idx: i });
+				return { upper: acc, idx: i };
 			});
 
 			for (const item of items) {
-				const r = Math.random() * 100;
-				const { idx } = ranges.find((range) => r <= range.upper)!;
-				returnData[idx].push(item);
+				const rnd = Math.random() * 100;
+				const chosen = ranges.find((r) => rnd <= r.upper)!; // sempre encontra porque soma ==100
+				buckets[chosen.idx].push(item);
 			}
 		}
 
-		/* ---------- Sequential ---------- */
-		if (selectionMethod === 'sequential') {
-			const staticData = this.getWorkflowStaticData('node');
-			let current = (staticData.currentIndex as number | undefined) ?? 0;
+		/* -------------- Sequential --------------- */
+		if (method === 'sequential') {
+			const sData = this.getWorkflowStaticData('node');
+			let cursor  = (sData.cursor as number | undefined) ?? 0;
 
 			for (const item of items) {
-				returnData[current].push(item);
-				current = (current + 1) % configuredOutputs.length;
+				buckets[cursor].push(item);
+				cursor = (cursor + 1) % cfgOutputs.length;
 			}
-
-			staticData.currentIndex = current;
+			sData.cursor = cursor;
 		}
 
-		return returnData;
+		/* devolve apenas as saídas que o usuário habilitou */
+		return buckets.slice(0, cfgOutputs.length);
 	}
 }
