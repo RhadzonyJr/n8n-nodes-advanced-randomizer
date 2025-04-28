@@ -1,96 +1,104 @@
-import {
+import type {
 	IExecuteFunctions,
+	IDataObject,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeConnectionType,
-	NodeOperationError,          // ← adicionado
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
-
-const MAX_OUTPUTS = 10;
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizerNode',
-		icon: 'fa:random',
+		icon: 'file:AdvancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
 		description:
-			'Route executions randomly, by percentage, or sequentially to multiple outputs',
-		defaults: { name: 'Advanced Randomizer' },
-
-		inputs: ['main'] as NodeConnectionType[],
-		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main' as NodeConnectionType) as NodeConnectionType[],
-
+			'Divide a execução em múltiplas saídas com lógica Random / Percentage / Sequential',
+		defaults: {
+			name: 'Advanced Randomizer',
+		},
+		inputs: ['main'],
+		// 25 é um limite seguro. Apenas as primeiras N (N = nº de rotas) serão usadas.
+		outputs: ['main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main',
+			'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main',
+			'main', 'main', 'main', 'main', 'main'],
 		properties: advancedRandomizerNodeOptions,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items      = this.getInputData();
-		const method     = this.getNodeParameter('selectionMethod', 0) as string;
-		const cfgOutputs = this.getNodeParameter(
-			'outputs',
+		const items = this.getInputData();
+		const method = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
+			'method',
 			0,
-			[],
-		) as { outputName: string; percentage?: number }[];
+		);
 
-		if (cfgOutputs.length < 2) {
-			throw new NodeOperationError(this.getNode(), 'Configure ao menos duas saídas em “Outputs”');
+		// `routingRules` vem como objeto { rule: [...] }
+		const rules = (this.getNodeParameter('routingRules', 0, []) as IDataObject)
+			.rule as IDataObject[];
+
+		const outputCount = rules.length;
+		if (outputCount === 0) {
+			throw new Error('Pelo menos uma Routing Rule deve ser adicionada.');
 		}
 
-		/* ------------ valida porcentagens --------- */
+		// -------------------- Método Random ------------------------------------------------------------
+		const pickRandom = (): number => Math.floor(Math.random() * outputCount);
+
+		// -------------------- Método Sequential --------------------------------------------------------
+		const data = this.getWorkflowStaticData('node') as { index?: number };
+		const pickSequential = (): number => {
+			const current = data.index ?? 0;
+			data.index = (current + 1) % outputCount;
+			return current;
+		};
+
+		// -------------------- Método Percentage --------------------------------------------------------
+		let cumulative: number[] = [];
 		if (method === 'percentage') {
-			const total = cfgOutputs.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
-			if (Math.abs(total - 100) > 0.01) {
-				throw new NodeOperationError(
-					this.getNode(),
-					`A soma das porcentagens deve ser 100 %. Valor atual: ${total} %`,
+			const percentages = rules.map((r) =>
+				Number((r.percentage ?? 0) as unknown as number),
+			);
+			const sum = percentages.reduce((a, b) => a + b, 0);
+			if (sum !== 100) {
+				throw new Error(
+					`A soma das porcentagens deve ser 100 (atualmente ${sum}).`,
 				);
 			}
-		}
-
-		/* ------------- buckets de saída ------------ */
-		const buckets: INodeExecutionData[][] = Array.from({ length: MAX_OUTPUTS }, () => []);
-
-		/* -------------- Random --------------------- */
-		if (method === 'random') {
-			for (const item of items) {
-				const idx = Math.floor(Math.random() * cfgOutputs.length);
-				buckets[idx].push(item);
-			}
-		}
-
-		/* ----------- Percentage -------------------- */
-		if (method === 'percentage') {
 			let acc = 0;
-			const ranges = cfgOutputs.map((o, i) => {
-				acc += o.percentage ?? 0;
-				return { upper: acc, idx: i };
-			});
+			cumulative = percentages.map((p) => (acc += p));
+		}
+		const pickPercentage = (): number => {
+			const rnd = Math.random() * 100;
+			return cumulative.findIndex((c) => rnd < c);
+		};
 
-			for (const item of items) {
-				const rnd = Math.random() * 100;
-				const bucket = ranges.find((r) => rnd <= r.upper)!;
-				buckets[bucket.idx].push(item);
+		// -------------------- Roteamento dos itens ----------------------------------------------------
+		const outputs: INodeExecutionData[][] = Array.from(
+			{ length: this.description.outputs!.length },
+			() => [],
+		);
+
+		for (const item of items) {
+			let index = 0;
+			switch (method) {
+				case 'random':
+					index = pickRandom();
+					break;
+				case 'sequential':
+					index = pickSequential();
+					break;
+				case 'percentage':
+					index = pickPercentage();
+					break;
 			}
+			// Clone o item antes de empurrar
+			const newItem: INodeExecutionData = { json: { ...item.json } };
+			outputs[index].push(newItem);
 		}
 
-		/* ------------- Sequential ------------------ */
-		if (method === 'sequential') {
-			const sData  = this.getWorkflowStaticData('node');
-			let cursor   = (sData.cursor as number | undefined) ?? 0;
-
-			for (const item of items) {
-				buckets[cursor].push(item);
-				cursor = (cursor + 1) % cfgOutputs.length;
-			}
-			sData.cursor = cursor;
-		}
-
-		/* -------- devolve apenas saídas ativas ----- */
-		return buckets.slice(0, cfgOutputs.length);
+		return outputs;
 	}
 }
