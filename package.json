@@ -1,29 +1,17 @@
 {
     "name": "n8n-nodes-advanced-randomizer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "n8n node that routes items randomly, by percentage, or sequentially.",
     "author": "Rhadzony Jr",
     "license": "MIT",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "files": [
-      "dist",
-      "README.md",
-      "LICENSE"
-    ],
+    "files": ["dist", "README.md", "LICENSE"],
     "scripts": {
       "build": "tsc -p tsconfig.json",
       "prepare": "npm run build"
     },
-    "keywords": [
-      "n8n",
-      "n8n-node",
-      "randomizer",
-      "percentage",
-      "sequential",
-      "workflow",
-      "automation"
-    ],
+    "keywords": ["n8n", "n8n-node", "randomizer", "workflow", "automation"],
     "repository": {
       "type": "git",
       "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
@@ -31,17 +19,19 @@
     "bugs": {
       "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer/issues"
     },
-    "n8n": {
-      "nodes": [
-        {
-          "name": "AdvancedRandomizer",
-          "type": "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
-        }
-      ]
+  
+
+    "peerDependencies": {
+      "n8n-workflow": "^1.0.0",
+      "n8n-core": "^1.0.0"
     },
     "devDependencies": {
+      "@types/node": "^20.12.7",
       "typescript": "^5.3.3",
-      "@types/node": "^20.12.7"
+  
+
+      "n8n-workflow": "^1.0.0",
+      "n8n-core": "^1.0.0"
     }
   }
   
