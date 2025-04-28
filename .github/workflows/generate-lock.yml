@@ -1,28 +1,30 @@
 name: Generate package-lock
 
-on: workflow_dispatch   # executa manualmente em “Actions → Run workflow”
+on:
+  workflow_dispatch:   # executa manualmente (clicar em "Run workflow")
+
+permissions:
+  contents: read       # leitura do repositório (checkout)
 
 jobs:
   lock:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Garante que exista npm (usa a mesma versão que você compila)
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 18          # ou a versão de sua preferência
+          node-version: 18
 
-      # Gera ou atualiza o package-lock.json
-      - name: Generate lock file
+      - name: Generate package-lock.json
         run: npm install --package-lock-only
 
-      # Faz commit só se o arquivo mudou
-      - name: Commit & push
+      - name: Commit & Push package-lock.json
         uses: EndBug/add-and-commit@v9
         with:
-          add: package-lock.json
-          message: "ci: add/update package-lock"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # token padrão que o GitHub Actions injeta
+          add: 'package-lock.json --force'   # força adicionar mesmo se .gitignore tiver
+          message: 'ci: add/update package-lock'
+          github_token: ${{ secrets.PAT_WRITE }}
