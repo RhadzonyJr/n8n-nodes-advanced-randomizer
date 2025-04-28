@@ -1,8 +1,9 @@
 import {
-	INodeType,
-	INodeTypeDescription,
 	IExecuteFunctions,
 	INodeExecutionData,
+	INodeType,
+	INodeTypeDescription,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 interface IRoute {
@@ -17,14 +18,17 @@ export class AdvancedRandomizerNode implements INodeType {
 		group: ['transform'],
 		version: 1,
 		icon: 'file:advancedRandomizerNode.svg',
+
 		description: 'Route items randomly, by percentage or sequentially',
-		defaults: {
-			name: 'Advanced Randomizer',
-		},
-		inputs: ['main'],           // <- CORREÇÃO: era "main[]"
-		outputs: ['main'],          // <- CORREÇÃO: era "main[]"
+
+		defaults: { name: 'Advanced Randomizer' },
+
+		/** ←  CORREÇÃO  — apenas “main”, nada de colchetes  */
+		inputs:  ['main'],
+		outputs: ['main'],
+
 		properties: [
-			/* ---------- modo ---------- */
+			/* ------------------- Modo ------------------- */
 			{
 				displayName: 'Mode',
 				name: 'mode',
@@ -35,10 +39,11 @@ export class AdvancedRandomizerNode implements INodeType {
 					{ name: 'Sequential', value: 'sequential'  },
 				],
 				default: 'random',
-				description: 'How to decide which route will receive each item',
+				description:
+					'How to decide which route will receive each item',
 			},
 
-			/* ---------- rotas ---------- */
+			/* ------------------- Rotas ------------------ */
 			{
 				displayName: 'Routes',
 				name: 'routes',
@@ -77,11 +82,11 @@ export class AdvancedRandomizerNode implements INodeType {
 		],
 	};
 
-	/* -------------------------------------------------------------------------- */
-	/*                                  execute                                   */
-	/* -------------------------------------------------------------------------- */
+	/* -------------------- execute ------------------- */
 
-	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+	async execute(
+		this: IExecuteFunctions,
+	): Promise<INodeExecutionData[][]> {
 		const items   = this.getInputData();
 		const mode    = this.getNodeParameter<string>('mode', 0);
 		const routes  = this.getNodeParameter<IRoute[]>('routes', 0, []);
@@ -90,42 +95,41 @@ export class AdvancedRandomizerNode implements INodeType {
 			throw new Error('Configure at least one route.');
 		}
 
-		/* ---------- validação de porcentagem ---------- */
+		/* --- validação de porcentagem --- */
 		if (mode === 'percentage') {
-			const total = routes.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0);
+			const total = routes.reduce<number>(
+				(sum, r) => sum + (Number(r.percentage) || 0),
+				0,
+			);
 			if (total !== 100) {
-				throw new Error(`In Percentage mode the sum of all percentages must be 100 (current ${total}).`);
+				throw new Error(
+					`Percentage mode: the sum of all percentages must be 100 (current ${total}).`,
+				);
 			}
 		}
 
-		/* ---------- preparação das saídas ---------- */
-		const outputs: INodeExecutionData[][] = routes.map(() => []);
+		/* --- prepara saídas --- */
+		const outputs: INodeExecutionData[][] = routes.map(
+			(): INodeExecutionData[] => [],
+		);
 
-		let seqIndex = 0;                            // p/ modo sequencial
-		const percArr = routes.map(r => Number(r.percentage) || 0); // cache porcentagens
+		let seq = 0;
+		const perc = routes.map((r) => Number(r.percentage) || 0);
 
 		for (const item of items) {
-
 			let target = 0;
 
-			// ---------- RANDOM ----------
 			if (mode === 'random') {
 				target = Math.floor(Math.random() * routes.length);
-			}
-
-			// ---------- SEQUENTIAL ----------
-			else if (mode === 'sequential') {
-				target   = seqIndex;
-				seqIndex = (seqIndex + 1) % routes.length;
-			}
-
-			// ---------- PERCENTAGE ----------
-			else { // percentage
-				const rnd = Math.random() * 100;
-				let cumulative = 0;
-				for (let i = 0; i < percArr.length; i++) {
-					cumulative += percArr[i];
-					if (rnd < cumulative) {
+			} else if (mode === 'sequential') {
+				target = seq;
+				seq = (seq + 1) % routes.length;
+			} else {
+				const r = Math.random() * 100;
+				let sum = 0;
+				for (let i = 0; i < perc.length; i++) {
+					sum += perc[i];
+					if (r < sum) {
 						target = i;
 						break;
 					}
