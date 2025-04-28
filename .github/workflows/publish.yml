@@ -1,13 +1,8 @@
 name: Publish to npm
 
-# ────────────────────────────────────────────────────────────────
-# Dispara só quando houver push na branch main
-# ────────────────────────────────────────────────────────────────
 on:
   push:
     branches: [main]
-    # Qualquer alteração relevante no código, package.json ou
-    # neste próprio workflow dispara a action.
     paths:
       - '**/*.ts'
       - 'package.json'
@@ -18,31 +13,31 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # Leitura de código (contents) e permissão para publicar pacotes
+    # Permissões mínimas necessárias
     permissions:
       contents: read
       packages: write
 
     steps:
-      # 1) Checkout do repositório
+      # 1) Checkout
       - uses: actions/checkout@v4
 
-      # 2) Prepara Node.js e cache do npm
+      # 2) Node.js 18 (LTS suportado pelo n8n)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           registry-url: https://registry.npmjs.org/
 
-      # 3) Instala dependências exatamente como no package-lock
+      # 3) Instala dependências
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
 
-      # 4) Compila TypeScript → pasta dist/
+      # 4) Compila TypeScript
       - name: Build project
         run: npm run build
 
-      # 5) Publica no npm (–access public para pacotes públicos)
+      # 5) Publica no npm
       - name: Publish to npm
         run: npm publish --access public
         env:

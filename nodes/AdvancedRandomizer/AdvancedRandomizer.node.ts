@@ -1,8 +1,8 @@
 /****************************************************************************************
- * File: nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts
- * Description: n8n custom node that routes items randomly, by percentage, or sequentially
- * Author: Rhadzony Jr
- * License: MIT
+ * AdvancedRandomizer.node.ts
+ * ------------------------------------------------------------------
+ * n8n custom node: roteia itens aleatoriamente, por porcentagem ou
+ * sequencialmente para até 10 saídas.
  ****************************************************************************************/
 
 import {
@@ -10,6 +10,7 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	NodeConnectionType, // <- usado para tipar `outputs`
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizer.node.options';
@@ -24,52 +25,50 @@ export class AdvancedRandomizer implements INodeType {
 		defaults: { name: 'Advanced Randomizer' },
 		icon: 'fa:random',
 
-		/* n8n exige número fixo de portas; declaramos 10 (máx permitido nas opções).
-		   Portas sem uso simplesmente não receberão itens. */
+		/* ----------------------------------------------------------
+		 * Portas
+		 * ---------------------------------------------------------- */
 		inputs: ['main'],
-		outputs: ['main','main','main','main','main','main','main','main','main','main'],
-
-		/* Rótulos amigáveis que aparecem no editor */
+		// Força o tipo literal `'main'` para satisfazer o compilador
+		outputs: Array<NodeConnectionType>(10).fill('main'),
 		outputNames: [
-			'Output 1','Output 2','Output 3','Output 4','Output 5',
-			'Output 6','Output 7','Output 8','Output 9','Output 10',
+			'Output 1', 'Output 2', 'Output 3', 'Output 4', 'Output 5',
+			'Output 6', 'Output 7', 'Output 8', 'Output 9', 'Output 10',
 		],
 
+		/* ----------------------------------------------------------
+		 * Campos visíveis no editor
+		 * ---------------------------------------------------------- */
 		properties: advancedRandomizerNodeOptions,
 	};
 
-	/******************************************************************
+	/* ======================================================================
 	 * execute()
-	 ******************************************************************/
+	 * ====================================================================*/
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 
-		const selectionMethod = this.getNodeParameter('selectionMethod', 0) as
-			| 'random'
-			| 'percentage'
-			| 'sequential';
+		const selectionMethod = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
+			'selectionMethod',
+			0,
+		);
 
-		const outputsCfg = this.getNodeParameter('outputs', 0, []) as {
-			outputName: string;
-			percentage?: number;
-		}[];
+		const outputsCfg = this.getNodeParameter<
+			{ outputName: string; percentage?: number }[]
+		>('outputs', 0, []);
 
-		/* ---------- Validação de porcentagem ---------- */
+		/* ---------- Validação de porcentagem ----------------------- */
 		if (selectionMethod === 'percentage') {
 			const total = outputsCfg.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
 			if (Math.abs(total - 100) > 0.01) {
-				throw new Error(
-					`The total percentage across all outputs must equal 100 % (got ${total}).`,
-				);
+				throw new Error(`The total percentage must be 100 % (got ${total}).`);
 			}
 		}
 
-		/* ---------- Prepara as saídas ---------- */
-		const returnData: INodeExecutionData[][] = Array(10)
-			.fill(null)
-			.map(() => []);
+		/* ---------- Prepara as 10 saídas --------------------------- */
+		const returnData: INodeExecutionData[][] = Array.from({ length: 10 }, () => []);
 
-		/* ---------- Random ---------- */
+		/* ---------- Random ---------------------------------------- */
 		if (selectionMethod === 'random') {
 			for (const item of items) {
 				const idx = Math.floor(Math.random() * outputsCfg.length);
@@ -77,7 +76,7 @@ export class AdvancedRandomizer implements INodeType {
 			}
 		}
 
-		/* ---------- Percentage ---------- */
+		/* ---------- Percentage ------------------------------------ */
 		if (selectionMethod === 'percentage') {
 			let acc = 0;
 			const ranges = outputsCfg.map((o, i) => {
@@ -92,7 +91,7 @@ export class AdvancedRandomizer implements INodeType {
 			}
 		}
 
-		/* ---------- Sequential ---------- */
+		/* ---------- Sequential ------------------------------------ */
 		if (selectionMethod === 'sequential') {
 			const staticData = this.getWorkflowStaticData('node') as { current?: number };
 			let current = staticData.current ?? 0;
