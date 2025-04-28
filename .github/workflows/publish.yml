@@ -3,6 +3,10 @@ name: Publish to npm
 on:
   workflow_dispatch:
 
+permissions:          # <-- NOVIDADE
+  contents: read
+  id-token: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
