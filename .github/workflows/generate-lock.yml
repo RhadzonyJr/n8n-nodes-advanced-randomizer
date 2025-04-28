@@ -1,10 +1,10 @@
 name: Generate package-lock
 
 on:
-  workflow_dispatch:   # executa manualmente (clicar em "Run workflow")
+  workflow_dispatch:
 
 permissions:
-  contents: read       # leitura do repositório (checkout)
+  contents: read
 
 jobs:
   lock:
@@ -25,6 +25,6 @@ jobs:
       - name: Commit & Push package-lock.json
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'package-lock.json --force'   # força adicionar mesmo se .gitignore tiver
+          add: 'package-lock.json --force'
           message: 'ci: add/update package-lock'
           github_token: ${{ secrets.PAT_WRITE }}
