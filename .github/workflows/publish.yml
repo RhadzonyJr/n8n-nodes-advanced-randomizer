@@ -1,34 +1,43 @@
-name: Publish
+name: Publish package to npm
 
 on:
-  workflow_dispatch:         # publica apenas quando você clicar “Run workflow”
-  release:                   # ou automaticamente quando criar uma tag v*
-    types: [published]
+  # publique manualmente ou no momento que preferir (tag, release, etc.)
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: read        # checkout
+      id-token: write       # carimbo de proveniência (--provenance)
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 18
-          registry-url: 'https://registry.npmjs.org/'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          # se o pacote tiver um @scope, defina scope aqui
+          # scope: '@seu-escopo'
+          # o próprio action injeta NODE_AUTH_TOKEN a partir de secrets
+          token: ${{ secrets.NPM_TOKEN }}
 
-      # instala dependências, compila, linta
-      - run: |
-          npm install
-          npm run build
-          npm run lint -c .eslintrc.prepublish.js nodes package.json
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
 
-      # cria .npmrc temporário com o token
-      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - name: Build
+        run: npm run build       # compila + copia ícones
+
+      - name: Lint (pré-publicação)
+        run: npm run lint -c .eslintrc.prepublish.js nodes package.json
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # publica somente se for uma nova versão
-      - run: npm publish --access public
-        env:
+          # redundante, mas mantém compatibilidade se mudar o setup-node
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
