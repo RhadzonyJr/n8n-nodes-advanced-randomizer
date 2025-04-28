@@ -23,7 +23,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: { name: 'Advanced Randomizer' },
 
 		/*  <<< AQUI está a causa do seu erro: só use 'main', SEM colchetes >>> */
-		inputs: ['main'],
+		inputs: 'main',
 		/*  Coloquei 5 saídas “main”.  Ajuste a quantidade caso deseje outro limite. */
 		outputs: ['main', 'main', 'main', 'main', 'main'],
 
