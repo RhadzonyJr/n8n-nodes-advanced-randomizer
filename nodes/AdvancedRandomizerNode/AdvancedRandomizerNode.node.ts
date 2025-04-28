@@ -1,60 +1,51 @@
-/****************************************************************************************
- * AdvancedRandomizerNode.node.ts
- * ------------------------------------------------------------------
- * Roteia itens para até 10 saídas usando três estratégias:
- *   1. Random    – escolhe uma saída aleatória
- *   2. Percentage – distribui conforme percentuais definidos
- *   3. Sequential – cicla sequencialmente pelas saídas
- ****************************************************************************************/
+/* -------------------------------------------------------------------------- */
+/*  AdvancedRandomizerNode                                                    */
+/* -------------------------------------------------------------------------- */
 
 import {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeConnectionType,
+	NodeParameterValue,
 } from 'n8n-workflow';
+
+type OutputCfg = {
+	outputName: string;
+	percentage?: number;
+};
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizerNode',
-		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
+		icon: 'file:randomizerNode.svg',
 		description:
-			'Route items randomly, by percentage, or sequentially to multiple outputs.',
-		defaults: { name: 'Advanced Randomizer' },
+			'Route executions randomly, by percentage, or sequentially to multiple outputs',
+		defaults: {
+			name: 'Advanced Randomizer',
+		},
 
-		/* ───────────────────────── Portas ─────────────────────── */
-		inputs: ['main'],
-		// 10 portas fixas (máx permitido); as não utilizadas permanecem vazias
-		outputs: [
-			'main','main','main','main','main',
-			'main','main','main','main','main',
-		] as NodeConnectionType[],
-		outputNames: [
-			'Output 1','Output 2','Output 3','Output 4','Output 5',
-			'Output 6','Output 7','Output 8','Output 9','Output 10',
-		],
+		/* ───────────────────────────────────────────────────────────── inputs/out */
+		inputs: ['main'], // apenas 1 entrada; o n8n aceitará quantos itens vierem
+		outputs: ['main'], // quantidade real é dinâmica (baseada em “Outputs”)
 
-		/* ─────────────────── Propriedades (UI) ─────────────────── */
+		/* ──────────────────────────────────────────────────────────── propriedades */
 		properties: [
-			/* Método de seleção */
 			{
 				displayName: 'Selection Method',
 				name: 'selectionMethod',
 				type: 'options',
 				options: [
-					{ name: 'Random',     value: 'random' },
+					{ name: 'Random', value: 'random' },
 					{ name: 'Percentage', value: 'percentage' },
 					{ name: 'Sequential', value: 'sequential' },
 				],
 				default: 'random',
-				description: 'How the output will be selected for each item.',
+				description: 'How the output path will be selected',
 			},
-
-			/* Configuração das saídas */
 			{
 				displayName: 'Outputs',
 				name: 'outputs',
@@ -80,11 +71,10 @@ export class AdvancedRandomizerNode implements INodeType {
 								type: 'number',
 								typeOptions: { minValue: 0, maxValue: 100 },
 								default: 0,
+								description: 'Only used when “Percentage” is selected',
 								displayOptions: {
 									show: { '/selectionMethod': ['percentage'] },
 								},
-								description:
-									'Chance (%) for this output (Percentage method only).',
 							},
 						],
 					},
@@ -93,65 +83,80 @@ export class AdvancedRandomizerNode implements INodeType {
 		],
 	};
 
-	/* ───────────────────────── execute() ─────────────────────── */
+	/* ------------------------------------------------------------------------ */
+	/*  execute                                                                 */
+	/* ------------------------------------------------------------------------ */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
+		const selectionMethod = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
+			'selectionMethod',
+			0,
+		);
 
-		type Method = 'random' | 'percentage' | 'sequential';
-		const method = this.getNodeParameter<Method>('selectionMethod', 0);
+		/* ------------------------------------------------------------------ */
+		/*  Obter configuração dos outputs                                    */
+		/*  fixedCollection (multipleValues) → [{ output: { … } }, …]         */
+		/* ------------------------------------------------------------------ */
+		const rawCfg = this.getNodeParameter<NodeParameterValue>('outputs', 0) as Array<{
+			output: OutputCfg;
+		}>;
 
-		const cfg = this.getNodeParameter<
-			{ outputName: string; percentage?: number }[]
-		>('outputs', 0);
+		const outputsCfg: OutputCfg[] = rawCfg.map((o) => o.output);
 
-		/* ---------- Validação de porcentagem ---------- */
-		if (method === 'percentage') {
-			const total = cfg.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
-			if (Math.abs(total - 100) > 0.01) {
+		if (selectionMethod === 'percentage') {
+			const total = outputsCfg.reduce((s, o) => s + (o.percentage ?? 0), 0);
+			if (Math.abs(total - 100) > 0.001) {
 				throw new Error(
-					`Sum of percentages must be 100 % (currently ${total}).`,
+					`The total percentage across all outputs must equal 100 %. Current total: ${total}.`,
 				);
 			}
 		}
 
-		/* ---------- Prepara 10 arrays de saída ---------- */
-		const out: INodeExecutionData[][] = Array.from({ length: 10 }, () => []);
+		/* ------------------------------------------------------------------ */
+		/*  Inicializar array de saídas dinâmico                              */
+		/* ------------------------------------------------------------------ */
+		const returnData: INodeExecutionData[][] = Array.from(
+			{ length: outputsCfg.length },
+			() => [],
+		);
 
-		/* ---------- Random ----------------------------- */
-		if (method === 'random') {
+		/* ────────────────────────────── Random ───────────────────────────── */
+		if (selectionMethod === 'random') {
 			for (const item of items) {
-				const idx = Math.floor(Math.random() * cfg.length);
-				out[idx].push(item);
+				const idx = Math.floor(Math.random() * outputsCfg.length);
+				returnData[idx].push(item);
 			}
+			return returnData;
 		}
 
-		/* ---------- Percentage ------------------------- */
-		if (method === 'percentage') {
+		/* ──────────────────────────── Percentage ─────────────────────────── */
+		if (selectionMethod === 'percentage') {
+			// Criar ranges cumulativos
+			const ranges: { upper: number; index: number }[] = [];
 			let acc = 0;
-			const ranges = cfg.map((o, i) => {
+			outputsCfg.forEach((o, i) => {
 				acc += o.percentage ?? 0;
-				return { upper: acc, i };
+				ranges.push({ upper: acc, index: i });
 			});
 
 			for (const item of items) {
-				const r = Math.random() * 100;
-				const tgt = ranges.find((rng) => r <= rng.upper)!;
-				out[tgt.i].push(item);
+				const rnd = Math.random() * 100;
+				const target = ranges.find((r) => rnd <= r.upper)!;
+				returnData[target.index].push(item);
 			}
+			return returnData;
 		}
 
-		/* ---------- Sequential ------------------------- */
-		if (method === 'sequential') {
-			const data = this.getWorkflowStaticData('node') as { idx?: number };
-			let idx = data.idx ?? 0;
+		/* ───────────────────────────── Sequential ────────────────────────── */
+		const staticData = this.getWorkflowStaticData('node');
+		let cursor = (staticData.cursor as number | undefined) ?? 0;
 
-			for (const item of items) {
-				out[idx].push(item);
-				idx = (idx + 1) % cfg.length;
-			}
-			data.idx = idx;
+		for (const item of items) {
+			returnData[cursor].push(item);
+			cursor = (cursor + 1) % outputsCfg.length;
 		}
+		staticData.cursor = cursor;
 
-		return out;
+		return returnData;
 	}
 }
