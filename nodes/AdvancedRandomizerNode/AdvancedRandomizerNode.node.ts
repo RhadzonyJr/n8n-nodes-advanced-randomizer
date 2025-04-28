@@ -22,13 +22,13 @@ export class AdvancedRandomizerNode implements INodeType {
 		description: 'Desvia itens por Random, Percentage ou Sequential',
 		defaults: { name: 'Advanced Randomizer' },
 
-		/*  <<< AQUI está a causa do seu erro: só use 'main', SEM colchetes >>> */
+
 		inputs: 'main',
-		/*  Coloquei 5 saídas “main”.  Ajuste a quantidade caso deseje outro limite. */
+
+
 		outputs: ['main', 'main', 'main', 'main', 'main'],
 
 		properties: <INodeProperties[]>[
-			/* ────── Método ────── */
 			{
 				displayName: 'Method',
 				name: 'method',
@@ -41,8 +41,6 @@ export class AdvancedRandomizerNode implements INodeType {
 					{ name: 'Sequential', value: 'sequential' },
 				],
 			},
-
-			/* ────── Rotas ────── */
 			{
 				displayName: 'Routes',
 				name: 'routes',
@@ -51,7 +49,7 @@ export class AdvancedRandomizerNode implements INodeType {
 				placeholder: 'Add Route',
 				default: [],
 				description:
-					'Adicione uma entrada por rota; o node criará o mesmo # de saídas (até 5).',
+					'Adicione uma entrada por rota; o node criará o mesmo nº de saídas.',
 				options: [
 					{
 						name: 'route',
@@ -85,7 +83,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		],
 	};
 
-	/* ═════════════ EXECUTE ═════════════ */
+	/* ═══════════ EXECUTE ═══════════ */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 
@@ -95,15 +93,13 @@ export class AdvancedRandomizerNode implements INodeType {
 			| 'sequential';
 		const routes = (this.getNodeParameter('routes', 0, []) as RouteCfg[]) ?? [];
 
-		/* máximo 5 saídas: usa quantas rotas o usuário criou ou 1 por default */
 		const maxOut = Math.min(Math.max(routes.length, 1), 5);
 		const outputs: INodeExecutionData[][] = Array.from({ length: maxOut }, () => []);
 
-		/* estado para sequencial */
+		/* estado sequencial */
 		const staticData = this.getWorkflowStaticData('node');
 		let seqIdx = (staticData.seqIdx as number | undefined) ?? 0;
 
-		/* pré-checa percentual */
 		if (method === 'percentage') {
 			const sum = routes.reduce((t, r) => t + (r.percentage ?? 0), 0);
 			if (sum !== 100) throw new Error('A soma de Percentage deve ser 100 %.');
@@ -116,6 +112,7 @@ export class AdvancedRandomizerNode implements INodeType {
 				case 'random':
 					target = Math.floor(Math.random() * maxOut);
 					break;
+
 				case 'percentage': {
 					const pick = Math.random() * 100;
 					let acc = 0;
@@ -128,6 +125,7 @@ export class AdvancedRandomizerNode implements INodeType {
 					}
 					break;
 				}
+
 				case 'sequential':
 					target = seqIdx;
 					seqIdx = (seqIdx + 1) % maxOut;
@@ -137,7 +135,7 @@ export class AdvancedRandomizerNode implements INodeType {
 			outputs[target].push(item);
 		}
 
-		staticData.seqIdx = seqIdx; // salva posição p/ próxima execução
+		staticData.seqIdx = seqIdx;
 		return outputs;
 	}
 }
