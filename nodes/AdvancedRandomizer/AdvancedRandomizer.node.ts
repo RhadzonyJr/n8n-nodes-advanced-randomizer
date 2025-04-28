@@ -1,8 +1,5 @@
 /****************************************************************************************
  * AdvancedRandomizer.node.ts
- * ------------------------------------------------------------------
- * n8n custom node: roteia itens aleatoriamente, por porcentagem ou
- * sequencialmente para até 10 saídas.
  ****************************************************************************************/
 
 import {
@@ -10,7 +7,7 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeConnectionType, // <- usado para tipar `outputs`
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizer.node.options';
@@ -25,39 +22,34 @@ export class AdvancedRandomizer implements INodeType {
 		defaults: { name: 'Advanced Randomizer' },
 		icon: 'fa:random',
 
-		/* ----------------------------------------------------------
-		 * Portas
-		 * ---------------------------------------------------------- */
+		/* Portas --------------------------------------------------- */
 		inputs: ['main'],
-		// Força o tipo literal `'main'` para satisfazer o compilador
-		outputs: Array<NodeConnectionType>(10).fill('main'),
+		outputs: [
+			'main','main','main','main','main',
+			'main','main','main','main','main',
+		] as NodeConnectionType[],
 		outputNames: [
-			'Output 1', 'Output 2', 'Output 3', 'Output 4', 'Output 5',
-			'Output 6', 'Output 7', 'Output 8', 'Output 9', 'Output 10',
+			'Output 1','Output 2','Output 3','Output 4','Output 5',
+			'Output 6','Output 7','Output 8','Output 9','Output 10',
 		],
 
-		/* ----------------------------------------------------------
-		 * Campos visíveis no editor
-		 * ---------------------------------------------------------- */
+		/* Campos do editor ---------------------------------------- */
 		properties: advancedRandomizerNodeOptions,
 	};
 
-	/* ======================================================================
-	 * execute()
-	 * ====================================================================*/
+	/* =========================================================== */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-
-		const selectionMethod = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
+		const items            = this.getInputData();
+		const selectionMethod  = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
 			'selectionMethod',
 			0,
 		);
 
 		const outputsCfg = this.getNodeParameter<
 			{ outputName: string; percentage?: number }[]
-		>('outputs', 0, []);
+		>('outputs', 0);
 
-		/* ---------- Validação de porcentagem ----------------------- */
+		/* Validação de porcentagem -------------------------------- */
 		if (selectionMethod === 'percentage') {
 			const total = outputsCfg.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
 			if (Math.abs(total - 100) > 0.01) {
@@ -65,10 +57,10 @@ export class AdvancedRandomizer implements INodeType {
 			}
 		}
 
-		/* ---------- Prepara as 10 saídas --------------------------- */
+		/* Prepara as 10 saídas ------------------------------------ */
 		const returnData: INodeExecutionData[][] = Array.from({ length: 10 }, () => []);
 
-		/* ---------- Random ---------------------------------------- */
+		/* Random --------------------------------------------------- */
 		if (selectionMethod === 'random') {
 			for (const item of items) {
 				const idx = Math.floor(Math.random() * outputsCfg.length);
@@ -76,7 +68,7 @@ export class AdvancedRandomizer implements INodeType {
 			}
 		}
 
-		/* ---------- Percentage ------------------------------------ */
+		/* Percentage ---------------------------------------------- */
 		if (selectionMethod === 'percentage') {
 			let acc = 0;
 			const ranges = outputsCfg.map((o, i) => {
@@ -91,7 +83,7 @@ export class AdvancedRandomizer implements INodeType {
 			}
 		}
 
-		/* ---------- Sequential ------------------------------------ */
+		/* Sequential ---------------------------------------------- */
 		if (selectionMethod === 'sequential') {
 			const staticData = this.getWorkflowStaticData('node') as { current?: number };
 			let current = staticData.current ?? 0;

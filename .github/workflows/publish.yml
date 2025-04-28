@@ -13,31 +13,25 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # Permissões mínimas necessárias
     permissions:
       contents: read
       packages: write
 
     steps:
-      # 1) Checkout
       - uses: actions/checkout@v4
 
-      # 2) Node.js 18 (LTS suportado pelo n8n)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org/
 
-      # 3) Instala dependências
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      # 4) Compila TypeScript
       - name: Build project
         run: npm run build
 
-      # 5) Publica no npm
       - name: Publish to npm
         run: npm publish --access public
         env:
