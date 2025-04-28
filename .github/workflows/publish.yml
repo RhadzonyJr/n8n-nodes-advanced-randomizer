@@ -25,7 +25,7 @@ jobs:
           # se o pacote tiver um @scope, defina scope aqui
           # scope: '@seu-escopo'
           # o próprio action injeta NODE_AUTH_TOKEN a partir de secrets
-          token: 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
+          token: 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
 
       - name: Install deps
         run: npm ci --no-audit --no-fund
@@ -40,4 +40,4 @@ jobs:
         run: npm publish --access public --provenance
         env:
           # redundante, mas mantém compatibilidade se mudar o setup-node
-          NODE_AUTH_TOKEN: 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
+          NODE_AUTH_TOKEN: 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
