@@ -1,105 +1,74 @@
 import {
-	IExecuteFunctions,
-	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	IExecuteFunctions,
+	INodeExecutionData,
 } from 'n8n-workflow';
 
-/**
- * AdvancedRandomizer
- *
- * – Random: escolhe uma rota aleatória
- * – Percentage: distribui conforme porcentagens definidas (a soma deve ser 100)
- * – Sequential: round‑robin entre as rotas
- */
+interface IRoute {
+	outputName?: string;
+	percentage?: number;
+}
+
 export class AdvancedRandomizerNode implements INodeType {
-	/**
-	 * Descrição (exibida no Editor UI)
-	 */
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizer',
-		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Routes items randomly, sequentially or by percentage',
+		icon: 'file:advancedRandomizerNode.svg',
+		description: 'Route items randomly, by percentage or sequentially',
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		// No momento o n8n precisa que o número de saídas seja fixo na descrição.
-		// Definimos uma saída "main" por padrão. O editor cria saídas adicionais
-		// automaticamente de acordo com as rotas que o usuário adicionar.
-		inputs: ['main'],
-		outputs: ['main'],
-
+		inputs: ['main'],           // <- CORREÇÃO: era "main[]"
+		outputs: ['main'],          // <- CORREÇÃO: era "main[]"
 		properties: [
-			/* -------------------------------------------------------------------------- */
-			/*                                 General                                    */
-			/* -------------------------------------------------------------------------- */
+			/* ---------- modo ---------- */
 			{
-				displayName: 'Method',
-				name: 'method',
+				displayName: 'Mode',
+				name: 'mode',
 				type: 'options',
 				options: [
-					{ name: 'Random', value: 'random' },
-					{ name: 'Percentage', value: 'percentage' },
-					{ name: 'Sequential', value: 'sequential' },
+					{ name: 'Random',     value: 'random'      },
+					{ name: 'Percentage', value: 'percentage'  },
+					{ name: 'Sequential', value: 'sequential'  },
 				],
 				default: 'random',
-				description: 'How items should be routed',
+				description: 'How to decide which route will receive each item',
 			},
 
-			/* -------------------------------------------------------------------------- */
-			/*                                  Routes                                    */
-			/* -------------------------------------------------------------------------- */
+			/* ---------- rotas ---------- */
 			{
-				displayName: 'Routing Rules',
+				displayName: 'Routes',
 				name: 'routes',
 				type: 'fixedCollection',
+				typeOptions: { multipleValues: true, sortable: true },
 				placeholder: 'Add Route',
-				typeOptions: {
-					multipleValueButtonText: 'Add Route',
-					multipleValues: true,
-				},
 				default: [],
 				options: [
 					{
-						name: 'route',
 						displayName: 'Route',
+						name: 'route',
 						values: [
-							{
-								displayName: 'Rename Output',
-								name: 'rename',
-								type: 'boolean',
-								default: false,
-							},
 							{
 								displayName: 'Output Name',
 								name: 'outputName',
 								type: 'string',
-								displayOptions: {
-									show: {
-										rename: [true],
-									},
-								},
 								default: '',
-								description: 'Name used for the corresponding output',
+								description: 'Optional label for this output',
 							},
 							{
 								displayName: 'Percentage',
 								name: 'percentage',
 								type: 'number',
-								typeOptions: {
-									minValue: 0,
-									maxValue: 100,
-								},
+								typeOptions: { minValue: 0, maxValue: 100 },
 								displayOptions: {
-									show: {
-										'/method': ['percentage'],
-									},
+									show: { '../../mode': ['percentage'] },
 								},
 								default: 0,
-								description: 'Chance (in %) that this route will be chosen',
+								description:
+									'Chance of this route being chosen (sum of all routes must be 100 %)',
 							},
 						],
 					},
@@ -108,63 +77,64 @@ export class AdvancedRandomizerNode implements INodeType {
 		],
 	};
 
-	/**
-	 * Lógica de execução
-	 */
+	/* -------------------------------------------------------------------------- */
+	/*                                  execute                                   */
+	/* -------------------------------------------------------------------------- */
+
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const method = this.getNodeParameter('method', 0) as 'random' | 'percentage' | 'sequential';
-		const routes = (this.getNodeParameter('routes.route', 0, []) as Array<{
-			rename: boolean;
-			outputName?: string;
-			percentage?: number;
-		}>);
+		const items   = this.getInputData();
+		const mode    = this.getNodeParameter<string>('mode', 0);
+		const routes  = this.getNodeParameter<IRoute[]>('routes', 0, []);
 
-		const numberOfRoutes = routes.length || 1;
-		const outputData: INodeExecutionData[][] = Array.from({ length: numberOfRoutes }, () => []);
+		if (routes.length === 0) {
+			throw new Error('Configure at least one route.');
+		}
 
-		let seqIndex = (this.getWorkflowStaticData('node') as { idx?: number }).idx ?? 0;
+		/* ---------- validação de porcentagem ---------- */
+		if (mode === 'percentage') {
+			const total = routes.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0);
+			if (total !== 100) {
+				throw new Error(`In Percentage mode the sum of all percentages must be 100 (current ${total}).`);
+			}
+		}
+
+		/* ---------- preparação das saídas ---------- */
+		const outputs: INodeExecutionData[][] = routes.map(() => []);
+
+		let seqIndex = 0;                            // p/ modo sequencial
+		const percArr = routes.map(r => Number(r.percentage) || 0); // cache porcentagens
 
 		for (const item of items) {
+
 			let target = 0;
 
-			switch (method) {
-				case 'random':
-					target = Math.floor(Math.random() * numberOfRoutes);
-					break;
-
-				case 'percentage': {
-					const total = routes.reduce((sum, r) => sum + (r.percentage ?? 0), 0);
-					if (total !== 100) {
-						throw new Error('Sum of route percentages must equal 100');
-					}
-					const pick = Math.random() * 100;
-					let acc = 0;
-					for (let i = 0; i < numberOfRoutes; i++) {
-						acc += routes[i].percentage ?? 0;
-						if (pick <= acc) {
-							target = i;
-							break;
-						}
-					}
-					break;
-				}
-
-				case 'sequential':
-					target = seqIndex % numberOfRoutes;
-					seqIndex++;
-					break;
+			// ---------- RANDOM ----------
+			if (mode === 'random') {
+				target = Math.floor(Math.random() * routes.length);
 			}
 
-			outputData[target].push(item);
+			// ---------- SEQUENTIAL ----------
+			else if (mode === 'sequential') {
+				target   = seqIndex;
+				seqIndex = (seqIndex + 1) % routes.length;
+			}
+
+			// ---------- PERCENTAGE ----------
+			else { // percentage
+				const rnd = Math.random() * 100;
+				let cumulative = 0;
+				for (let i = 0; i < percArr.length; i++) {
+					cumulative += percArr[i];
+					if (rnd < cumulative) {
+						target = i;
+						break;
+					}
+				}
+			}
+
+			outputs[target].push(item);
 		}
 
-		if (method === 'sequential') {
-			(this.getWorkflowStaticData('node') as { idx?: number }).idx = seqIndex;
-		}
-
-		return outputData;
+		return outputs;
 	}
 }
-
-export default AdvancedRandomizerNode;
