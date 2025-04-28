@@ -1,43 +1,34 @@
-name: Build & Publish
+name: Publish
 
-###############################################################################
-# Disparadores
-###############################################################################
 on:
-  push:
-    branches: [main]      # publica somente na main
-  pull_request:           # PRs apenas testam o build
+  workflow_dispatch:         # publica apenas quando você clicar “Run workflow”
+  release:                   # ou automaticamente quando criar uma tag v*
+    types: [published]
 
-###############################################################################
 jobs:
-  build_publish:
+  publish:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write       # necessário para publicar no npm registry
-
     steps:
-      # 1) Checkout do repositório
       - uses: actions/checkout@v4
 
-      # 2) Instala Node.js 18 e configura o registro npm
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          registry-url: https://registry.npmjs.org/
+          registry-url: 'https://registry.npmjs.org/'
 
-      # 3) Instala dependências
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      # instala dependências, compila, linta
+      - run: |
+          npm ci
+          npm run build
+          npm run lint -c .eslintrc.prepublish.js nodes package.json
 
-      # 4) Compila TypeScript / copia ícones (script 'build' no package.json)
-      - name: Build project
-        run: npm run build
+      # cria .npmrc temporário com o token
+      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # 5) Publica no npm (somente em push na main, não em PR)
-      - name: Publish to npm
-        if: github.event_name == 'push'
-        run: npm publish --access public
+      # publica somente se for uma nova versão
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
