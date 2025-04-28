@@ -6,7 +6,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-interface Route {
+interface RouteCfg {
 	rename: boolean;
 	outputName?: string;
 	percentage?: number;
@@ -19,29 +19,30 @@ export class AdvancedRandomizerNode implements INodeType {
 		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Redireciona os itens usando lógica Random / Percentage / Sequential',
-		defaults: {
-			name: 'Advanced Randomizer',
-		},
-		// ――― o compilador só aceita exatamente estas strings:
+		description: 'Desvia itens por Random, Percentage ou Sequential',
+		defaults: { name: 'Advanced Randomizer' },
+
+		/*  <<< AQUI está a causa do seu erro: só use 'main', SEM colchetes >>> */
 		inputs: ['main'],
-		outputs: ['main'],
+		/*  Coloquei 5 saídas “main”.  Ajuste a quantidade caso deseje outro limite. */
+		outputs: ['main', 'main', 'main', 'main', 'main'],
+
 		properties: <INodeProperties[]>[
-			/* ─────────── Método ─────────── */
+			/* ────── Método ────── */
 			{
 				displayName: 'Method',
 				name: 'method',
 				type: 'options',
 				default: 'random',
+				description: 'Lógica usada para escolher a rota',
 				options: [
 					{ name: 'Random', value: 'random' },
 					{ name: 'Percentage', value: 'percentage' },
 					{ name: 'Sequential', value: 'sequential' },
 				],
-				description: 'Lógica usada para escolher a rota de saída',
 			},
 
-			/* ─────────── Rotas ─────────── */
+			/* ────── Rotas ────── */
 			{
 				displayName: 'Routes',
 				name: 'routes',
@@ -50,7 +51,7 @@ export class AdvancedRandomizerNode implements INodeType {
 				placeholder: 'Add Route',
 				default: [],
 				description:
-					'Uma entrada por rota desejada. O node cria a mesma quantidade de saídas.',
+					'Adicione uma entrada por rota; o node criará o mesmo # de saídas (até 5).',
 				options: [
 					{
 						name: 'route',
@@ -67,9 +68,7 @@ export class AdvancedRandomizerNode implements INodeType {
 								name: 'outputName',
 								type: 'string',
 								default: '',
-								displayOptions: {
-									show: { rename: [true] },
-								},
+								displayOptions: { show: { rename: [true] } },
 							},
 							{
 								displayName: 'Percentage',
@@ -77,9 +76,7 @@ export class AdvancedRandomizerNode implements INodeType {
 								type: 'number',
 								typeOptions: { minValue: 0, maxValue: 100 },
 								default: 0,
-								displayOptions: {
-									show: { '/method': ['percentage'] },
-								},
+								displayOptions: { show: { '/method': ['percentage'] } },
 							},
 						],
 					},
@@ -88,58 +85,59 @@ export class AdvancedRandomizerNode implements INodeType {
 		],
 	};
 
-	/* ═══════════════════════════════════════════════ */
-
+	/* ═════════════ EXECUTE ═════════════ */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const inputItems = this.getInputData();
+		const items = this.getInputData();
 
-		// tipagem explícita evita TS2344
 		const method = this.getNodeParameter('method', 0) as
 			| 'random'
 			| 'percentage'
 			| 'sequential';
+		const routes = (this.getNodeParameter('routes', 0, []) as RouteCfg[]) ?? [];
 
-		const routes = (this.getNodeParameter('routes', 0, []) as Route[]) ?? [];
-		const outTotal = Math.max(routes.length, 1); // pelo menos 1 saída
+		/* máximo 5 saídas: usa quantas rotas o usuário criou ou 1 por default */
+		const maxOut = Math.min(Math.max(routes.length, 1), 5);
+		const outputs: INodeExecutionData[][] = Array.from({ length: maxOut }, () => []);
 
-		// prepara estrutura de saída
-		const outputs: INodeExecutionData[][] = Array.from({ length: outTotal }, () => []);
+		/* estado para sequencial */
+		const staticData = this.getWorkflowStaticData('node');
+		let seqIdx = (staticData.seqIdx as number | undefined) ?? 0;
 
-		/* ─────────── STATE para SEQUENTIAL ─────────── */
-		let seqIndex = this.getWorkflowStaticData('node').seqIndex as number | undefined;
-		if (seqIndex === undefined) seqIndex = 0;
+		/* pré-checa percentual */
+		if (method === 'percentage') {
+			const sum = routes.reduce((t, r) => t + (r.percentage ?? 0), 0);
+			if (sum !== 100) throw new Error('A soma de Percentage deve ser 100 %.');
+		}
 
-		/* ─────────── LOOP de itens ─────────── */
-		for (const item of inputItems) {
+		for (const item of items) {
 			let target = 0;
 
-			if (method === 'random') {
-				target = Math.floor(Math.random() * outTotal);
-			} else if (method === 'percentage') {
-				const totalPct = routes.reduce((t, r) => t + (r.percentage ?? 0), 0);
-				if (totalPct !== 100)
-					throw new Error('A soma de “Percentage” deve ser exatamente 100 %.');
-
-				const pick = Math.random() * 100;
-				let acc = 0;
-				for (let i = 0; i < routes.length; i++) {
-					acc += routes[i].percentage ?? 0;
-					if (pick <= acc) {
-						target = i;
-						break;
+			switch (method) {
+				case 'random':
+					target = Math.floor(Math.random() * maxOut);
+					break;
+				case 'percentage': {
+					const pick = Math.random() * 100;
+					let acc = 0;
+					for (let i = 0; i < maxOut; i++) {
+						acc += routes[i]?.percentage ?? 0;
+						if (pick <= acc) {
+							target = i;
+							break;
+						}
 					}
+					break;
 				}
-			} else if (method === 'sequential') {
-				target = seqIndex;
-				seqIndex = (seqIndex + 1) % outTotal;
+				case 'sequential':
+					target = seqIdx;
+					seqIdx = (seqIdx + 1) % maxOut;
+					break;
 			}
 
 			outputs[target].push(item);
 		}
 
-		// salva posição atual para o próximo execute
-		this.getWorkflowStaticData('node').seqIndex = seqIndex;
-
+		staticData.seqIdx = seqIdx; // salva posição p/ próxima execução
 		return outputs;
 	}
 }
