@@ -1,41 +1,29 @@
 {
   "compilerOptions": {
-    /* 📦 Emissão */
-    "outDir": "./dist",
-    "declaration": true,
-    "sourceMap": true,
-    "removeComments": true,
-    "incremental": true,
-
-    /* 🧑‍💻 Experiência de dev */
     "strict": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2019",
+    "lib": ["es2019", "es2020", "es2022.error"],
+    "removeComments": true,
+    "useUnknownInCatchVariables": false,
+    "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "useUnknownInCatchVariables": false,
     "preserveConstEnums": true,
-    "skipLibCheck": true,
-
-    /* 🔗 Módulos */
-    "module": "commonjs",
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-
-    /* 🏹 Target / libs */
-    "target": "es2019",
-    "lib": ["es2019", "es2020", "es2022.error"]
+    "incremental": true,
+    "declaration": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "outDir": "./dist/"
   },
-
   "include": [
-    "nodes/**/*",
+    "nodes/AdvancedRandomizerNode/**/*.ts",
     "index.ts",
     "package.json"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }
