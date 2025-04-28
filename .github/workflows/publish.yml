@@ -19,7 +19,7 @@ jobs:
 
       # instala dependências, compila, linta
       - run: |
-          npm ci
+          npm install
           npm run build
           npm run lint -c .eslintrc.prepublish.js nodes package.json
 
