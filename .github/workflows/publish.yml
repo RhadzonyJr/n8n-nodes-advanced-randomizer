@@ -1,38 +1,43 @@
-name: Publish to npm
+name: Build & Publish
 
+###############################################################################
+# Disparadores
+###############################################################################
 on:
   push:
-    branches: [main]
-    paths:
-      - '**/*.ts'
-      - 'package.json'
-      - 'tsconfig.json'
-      - '.github/workflows/publish.yml'
+    branches: [main]      # publica somente na main
+  pull_request:           # PRs apenas testam o build
 
+###############################################################################
 jobs:
-  publish:
+  build_publish:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      packages: write
+      packages: write       # necessário para publicar no npm registry
 
     steps:
+      # 1) Checkout do repositório
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # 2) Instala Node.js 18 e configura o registro npm
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org/
 
+      # 3) Instala dependências
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      # 4) Compila TypeScript / copia ícones (script 'build' no package.json)
       - name: Build project
         run: npm run build
 
+      # 5) Publica no npm (somente em push na main, não em PR)
       - name: Publish to npm
+        if: github.event_name == 'push'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
