@@ -6,7 +6,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-interface IRoute {
+interface Route {
 	rename: boolean;
 	outputName?: string;
 	percentage?: number;
@@ -19,47 +19,38 @@ export class AdvancedRandomizerNode implements INodeType {
 		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Redireciona itens de forma Random, Percentage ou Sequential',
+		description: 'Redireciona os itens usando lógica Random / Percentage / Sequential',
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		// ❱❱❱  Estes valores precisam ser *string[]* contendo apenas o nome das conexões
+		// ――― o compilador só aceita exatamente estas strings:
 		inputs: ['main'],
 		outputs: ['main'],
 		properties: <INodeProperties[]>[
-			/* ---------- Método ---------- */
+			/* ─────────── Método ─────────── */
 			{
 				displayName: 'Method',
 				name: 'method',
 				type: 'options',
 				default: 'random',
 				options: [
-					{
-						name: 'Random',
-						value: 'random',
-					},
-					{
-						name: 'Percentage',
-						value: 'percentage',
-					},
-					{
-						name: 'Sequential',
-						value: 'sequential',
-					},
+					{ name: 'Random', value: 'random' },
+					{ name: 'Percentage', value: 'percentage' },
+					{ name: 'Sequential', value: 'sequential' },
 				],
 				description: 'Lógica usada para escolher a rota de saída',
 			},
 
-			/* ---------- Rotas ---------- */
+			/* ─────────── Rotas ─────────── */
 			{
 				displayName: 'Routes',
 				name: 'routes',
 				type: 'fixedCollection',
-				typeOptions: {
-					multipleValues: true,
-				},
+				typeOptions: { multipleValues: true },
 				placeholder: 'Add Route',
 				default: [],
+				description:
+					'Uma entrada por rota desejada. O node cria a mesma quantidade de saídas.',
 				options: [
 					{
 						name: 'route',
@@ -77,90 +68,78 @@ export class AdvancedRandomizerNode implements INodeType {
 								type: 'string',
 								default: '',
 								displayOptions: {
-									show: {
-										rename: [true],
-									},
+									show: { rename: [true] },
 								},
 							},
 							{
 								displayName: 'Percentage',
 								name: 'percentage',
 								type: 'number',
-								typeOptions: {
-									minValue: 0,
-									maxValue: 100,
-								},
+								typeOptions: { minValue: 0, maxValue: 100 },
 								default: 0,
 								displayOptions: {
-									show: {
-										'/method': ['percentage'],
-									},
+									show: { '/method': ['percentage'] },
 								},
 							},
 						],
 					},
 				],
-				description:
-					'Uma entrada por rota desejada. A quantidade de saídas do node acompanha o número de rotas.',
 			},
 		],
 	};
 
-	/* ====================================================================== */
+	/* ═══════════════════════════════════════════════ */
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const method = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
-			'method',
-			0,
-		);
-		const routes = (this.getNodeParameter('routes', 0, []) as IRoute[]) ?? [];
+		const inputItems = this.getInputData();
 
-		const outputCount = Math.max(1, routes.length || 1);
-		const outputData: INodeExecutionData[][] = Array.from({ length: outputCount }).map(
-			() => [],
-		);
+		// tipagem explícita evita TS2344
+		const method = this.getNodeParameter('method', 0) as
+			| 'random'
+			| 'percentage'
+			| 'sequential';
 
-		/* ---------- SEQUENTIAL ---------- */
-		const seqKey = 'seqIndex';
-		const staticData = this.getWorkflowStaticData('node') as { [k: string]: number };
-		let seqIndex = staticData[seqKey] ?? 0;
+		const routes = (this.getNodeParameter('routes', 0, []) as Route[]) ?? [];
+		const outTotal = Math.max(routes.length, 1); // pelo menos 1 saída
 
-		for (const item of items) {
+		// prepara estrutura de saída
+		const outputs: INodeExecutionData[][] = Array.from({ length: outTotal }, () => []);
+
+		/* ─────────── STATE para SEQUENTIAL ─────────── */
+		let seqIndex = this.getWorkflowStaticData('node').seqIndex as number | undefined;
+		if (seqIndex === undefined) seqIndex = 0;
+
+		/* ─────────── LOOP de itens ─────────── */
+		for (const item of inputItems) {
 			let target = 0;
 
 			if (method === 'random') {
-				target = Math.floor(Math.random() * outputCount);
-			}
+				target = Math.floor(Math.random() * outTotal);
+			} else if (method === 'percentage') {
+				const totalPct = routes.reduce((t, r) => t + (r.percentage ?? 0), 0);
+				if (totalPct !== 100)
+					throw new Error('A soma de “Percentage” deve ser exatamente 100 %.');
 
-			if (method === 'percentage') {
-				const total = routes.reduce((t, r) => t + (r.percentage ?? 0), 0);
-				if (total !== 100) {
-					throw new Error('A soma dos campos Percentage deve resultar em 100 %.');
-				}
-
-				const rand = Math.random() * 100;
+				const pick = Math.random() * 100;
 				let acc = 0;
 				for (let i = 0; i < routes.length; i++) {
 					acc += routes[i].percentage ?? 0;
-					if (rand <= acc) {
+					if (pick <= acc) {
 						target = i;
 						break;
 					}
 				}
-			}
-
-			if (method === 'sequential') {
+			} else if (method === 'sequential') {
 				target = seqIndex;
-				seqIndex = (seqIndex + 1) % outputCount;
+				seqIndex = (seqIndex + 1) % outTotal;
 			}
 
-			outputData[target].push(item);
+			outputs[target].push(item);
 		}
 
-		// Salva estado para o modo sequencial
-		staticData[seqKey] = seqIndex;
+		// salva posição atual para o próximo execute
+		this.getWorkflowStaticData('node').seqIndex = seqIndex;
 
-		return outputData;
+		return outputs;
 	}
 }
