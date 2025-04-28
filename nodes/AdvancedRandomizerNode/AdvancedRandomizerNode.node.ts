@@ -3,14 +3,11 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-/**
- * Máximo de saídas físicas que vamos anunciar para o n8n.
- * O usuário pode habilitar entre 2-10 no parâmetro “Outputs”.
- */
 const MAX_OUTPUTS = 10;
 
 export class AdvancedRandomizerNode implements INodeType {
@@ -24,49 +21,38 @@ export class AdvancedRandomizerNode implements INodeType {
 			'Route executions randomly, by percentage, or sequentially to multiple outputs.',
 		defaults: { name: 'Advanced Randomizer' },
 
-		/*
-		 * 1 entrada física e 10 saídas físicas para satisfazer o compilador.
-		 * Durante a execução cortamos para o número que o usuário configurou.
-		 */
-		inputs: ['main'],
-		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main'),
+		// 👉 1 entrada + 10 saídas “físicas” (tipadas como NodeConnectionType[])
+		inputs: ['main'] as NodeConnectionType[],
+		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main' as NodeConnectionType) as NodeConnectionType[],
 
 		properties: advancedRandomizerNodeOptions,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items        = this.getInputData();
-		const method       = this.getNodeParameter('selectionMethod', 0) as string;
-
-		const cfgOutputs   = this.getNodeParameter(
+		const items      = this.getInputData();
+		const method     = this.getNodeParameter('selectionMethod', 0) as string;
+		const cfgOutputs = this.getNodeParameter(
 			'outputs',
 			0,
 			[],
 		) as { outputName: string; percentage?: number }[];
 
 		if (cfgOutputs.length < 2) {
-			throw new Error('Please configure at least two outputs.');
+			throw new Error('Configure ao menos duas saídas em “Outputs”.');
 		}
 
-		/* ------- validação de porcentagens -------- */
+		/* ------------ valida porcentagens --------- */
 		if (method === 'percentage') {
 			const total = cfgOutputs.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
 			if (Math.abs(total - 100) > 0.01) {
-				throw new Error(
-					`The total percentage across all outputs must equal 100 %. Current total: ${total.toFixed(
-						2,
-					)} %.`,
-				);
+				throw new Error(`A soma das porcentagens deve ser 100 %. Valor atual: ${total} %.`);
 			}
 		}
 
-		/* ------- inicializa vetor de saídas ------- */
-		const buckets: INodeExecutionData[][] = Array.from(
-			{ length: MAX_OUTPUTS },
-			() => [],
-		);
+		/* ------------- buckets de saída ------------ */
+		const buckets: INodeExecutionData[][] = Array.from({ length: MAX_OUTPUTS }, () => []);
 
-		/* -------------- Random -------------------- */
+		/* -------------- Random --------------------- */
 		if (method === 'random') {
 			for (const item of items) {
 				const idx = Math.floor(Math.random() * cfgOutputs.length);
@@ -74,9 +60,8 @@ export class AdvancedRandomizerNode implements INodeType {
 			}
 		}
 
-		/* ------------ Percentage ------------------ */
+		/* ----------- Percentage -------------------- */
 		if (method === 'percentage') {
-			// cria ranges cumulativos 0-100
 			let acc = 0;
 			const ranges = cfgOutputs.map((o, i) => {
 				acc += o.percentage ?? 0;
@@ -85,15 +70,15 @@ export class AdvancedRandomizerNode implements INodeType {
 
 			for (const item of items) {
 				const rnd = Math.random() * 100;
-				const chosen = ranges.find((r) => rnd <= r.upper)!; // sempre encontra porque soma ==100
-				buckets[chosen.idx].push(item);
+				const bucket = ranges.find((r) => rnd <= r.upper)!;
+				buckets[bucket.idx].push(item);
 			}
 		}
 
-		/* -------------- Sequential --------------- */
+		/* ------------- Sequential ------------------ */
 		if (method === 'sequential') {
-			const sData = this.getWorkflowStaticData('node');
-			let cursor  = (sData.cursor as number | undefined) ?? 0;
+			const sData  = this.getWorkflowStaticData('node');
+			let cursor   = (sData.cursor as number | undefined) ?? 0;
 
 			for (const item of items) {
 				buckets[cursor].push(item);
@@ -102,7 +87,7 @@ export class AdvancedRandomizerNode implements INodeType {
 			sData.cursor = cursor;
 		}
 
-		/* devolve apenas as saídas que o usuário habilitou */
+		/* -------- devolve apenas saídas ativas ----- */
 		return buckets.slice(0, cfgOutputs.length);
 	}
 }
