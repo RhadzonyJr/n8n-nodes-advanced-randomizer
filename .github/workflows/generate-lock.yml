@@ -27,4 +27,4 @@ jobs:
         with:
           add: 'package-lock.json --force'
           message: 'ci: add/update package-lock'
-          github_token: ${{ secrets.PAT_WRITE }}
+          github_token: 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
