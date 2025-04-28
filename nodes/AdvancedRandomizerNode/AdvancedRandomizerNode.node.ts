@@ -1,104 +1,170 @@
-import type {
+import {
 	IExecuteFunctions,
-	IDataObject,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
-
+/**
+ * AdvancedRandomizer
+ *
+ * – Random: escolhe uma rota aleatória
+ * – Percentage: distribui conforme porcentagens definidas (a soma deve ser 100)
+ * – Sequential: round‑robin entre as rotas
+ */
 export class AdvancedRandomizerNode implements INodeType {
+	/**
+	 * Descrição (exibida no Editor UI)
+	 */
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
-		name: 'advancedRandomizerNode',
-		icon: 'file:AdvancedRandomizerNode.svg',
+		name: 'advancedRandomizer',
+		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
-		description:
-			'Divide a execução em múltiplas saídas com lógica Random / Percentage / Sequential',
+		description: 'Routes items randomly, sequentially or by percentage',
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
+		// No momento o n8n precisa que o número de saídas seja fixo na descrição.
+		// Definimos uma saída "main" por padrão. O editor cria saídas adicionais
+		// automaticamente de acordo com as rotas que o usuário adicionar.
 		inputs: ['main'],
-		// 25 é um limite seguro. Apenas as primeiras N (N = nº de rotas) serão usadas.
-		outputs: ['main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main',
-			'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main', 'main',
-			'main', 'main', 'main', 'main', 'main'],
-		properties: advancedRandomizerNodeOptions,
+		outputs: ['main'],
+
+		properties: [
+			/* -------------------------------------------------------------------------- */
+			/*                                 General                                    */
+			/* -------------------------------------------------------------------------- */
+			{
+				displayName: 'Method',
+				name: 'method',
+				type: 'options',
+				options: [
+					{ name: 'Random', value: 'random' },
+					{ name: 'Percentage', value: 'percentage' },
+					{ name: 'Sequential', value: 'sequential' },
+				],
+				default: 'random',
+				description: 'How items should be routed',
+			},
+
+			/* -------------------------------------------------------------------------- */
+			/*                                  Routes                                    */
+			/* -------------------------------------------------------------------------- */
+			{
+				displayName: 'Routing Rules',
+				name: 'routes',
+				type: 'fixedCollection',
+				placeholder: 'Add Route',
+				typeOptions: {
+					multipleValueButtonText: 'Add Route',
+					multipleValues: true,
+				},
+				default: [],
+				options: [
+					{
+						name: 'route',
+						displayName: 'Route',
+						values: [
+							{
+								displayName: 'Rename Output',
+								name: 'rename',
+								type: 'boolean',
+								default: false,
+							},
+							{
+								displayName: 'Output Name',
+								name: 'outputName',
+								type: 'string',
+								displayOptions: {
+									show: {
+										rename: [true],
+									},
+								},
+								default: '',
+								description: 'Name used for the corresponding output',
+							},
+							{
+								displayName: 'Percentage',
+								name: 'percentage',
+								type: 'number',
+								typeOptions: {
+									minValue: 0,
+									maxValue: 100,
+								},
+								displayOptions: {
+									show: {
+										'/method': ['percentage'],
+									},
+								},
+								default: 0,
+								description: 'Chance (in %) that this route will be chosen',
+							},
+						],
+					},
+				],
+			},
+		],
 	};
 
+	/**
+	 * Lógica de execução
+	 */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const method = this.getNodeParameter<'random' | 'percentage' | 'sequential'>(
-			'method',
-			0,
-		);
+		const method = this.getNodeParameter('method', 0) as 'random' | 'percentage' | 'sequential';
+		const routes = (this.getNodeParameter('routes.route', 0, []) as Array<{
+			rename: boolean;
+			outputName?: string;
+			percentage?: number;
+		}>);
 
-		// `routingRules` vem como objeto { rule: [...] }
-		const rules = (this.getNodeParameter('routingRules', 0, []) as IDataObject)
-			.rule as IDataObject[];
+		const numberOfRoutes = routes.length || 1;
+		const outputData: INodeExecutionData[][] = Array.from({ length: numberOfRoutes }, () => []);
 
-		const outputCount = rules.length;
-		if (outputCount === 0) {
-			throw new Error('Pelo menos uma Routing Rule deve ser adicionada.');
-		}
-
-		// -------------------- Método Random ------------------------------------------------------------
-		const pickRandom = (): number => Math.floor(Math.random() * outputCount);
-
-		// -------------------- Método Sequential --------------------------------------------------------
-		const data = this.getWorkflowStaticData('node') as { index?: number };
-		const pickSequential = (): number => {
-			const current = data.index ?? 0;
-			data.index = (current + 1) % outputCount;
-			return current;
-		};
-
-		// -------------------- Método Percentage --------------------------------------------------------
-		let cumulative: number[] = [];
-		if (method === 'percentage') {
-			const percentages = rules.map((r) =>
-				Number((r.percentage ?? 0) as unknown as number),
-			);
-			const sum = percentages.reduce((a, b) => a + b, 0);
-			if (sum !== 100) {
-				throw new Error(
-					`A soma das porcentagens deve ser 100 (atualmente ${sum}).`,
-				);
-			}
-			let acc = 0;
-			cumulative = percentages.map((p) => (acc += p));
-		}
-		const pickPercentage = (): number => {
-			const rnd = Math.random() * 100;
-			return cumulative.findIndex((c) => rnd < c);
-		};
-
-		// -------------------- Roteamento dos itens ----------------------------------------------------
-		const outputs: INodeExecutionData[][] = Array.from(
-			{ length: this.description.outputs!.length },
-			() => [],
-		);
+		let seqIndex = (this.getWorkflowStaticData('node') as { idx?: number }).idx ?? 0;
 
 		for (const item of items) {
-			let index = 0;
+			let target = 0;
+
 			switch (method) {
 				case 'random':
-					index = pickRandom();
+					target = Math.floor(Math.random() * numberOfRoutes);
 					break;
+
+				case 'percentage': {
+					const total = routes.reduce((sum, r) => sum + (r.percentage ?? 0), 0);
+					if (total !== 100) {
+						throw new Error('Sum of route percentages must equal 100');
+					}
+					const pick = Math.random() * 100;
+					let acc = 0;
+					for (let i = 0; i < numberOfRoutes; i++) {
+						acc += routes[i].percentage ?? 0;
+						if (pick <= acc) {
+							target = i;
+							break;
+						}
+					}
+					break;
+				}
+
 				case 'sequential':
-					index = pickSequential();
-					break;
-				case 'percentage':
-					index = pickPercentage();
+					target = seqIndex % numberOfRoutes;
+					seqIndex++;
 					break;
 			}
-			// Clone o item antes de empurrar
-			const newItem: INodeExecutionData = { json: { ...item.json } };
-			outputs[index].push(newItem);
+
+			outputData[target].push(item);
 		}
 
-		return outputs;
+		if (method === 'sequential') {
+			(this.getWorkflowStaticData('node') as { idx?: number }).idx = seqIndex;
+		}
+
+		return outputData;
 	}
 }
+
+export default AdvancedRandomizerNode;
