@@ -2,7 +2,7 @@
     "name": "n8n-nodes-advanced-randomizer",
     "version": "0.0.1",
     "description": "An advanced randomizer node for n8n supporting random, percentage, and sequential output routing.",
-    "author": "Rhadzony Storch Júnior",
+    "author": "Rhadzony Jr",
     "license": "MIT",
     "main": "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts",
     "scripts": {
@@ -11,16 +11,20 @@
     },
     "keywords": [
       "n8n",
-      "n8n-nodes",
+      "n8n-node",
       "randomizer",
-      "automation",
-      "workflow",
       "percentage",
-      "sequential"
+      "sequential",
+      "workflow",
+      "automation"
     ],
-    "dependencies": {},
-    "devDependencies": {
-      "typescript": "^5.3.3"
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
+    },
+    "homepage": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer#readme",
+    "bugs": {
+      "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer/issues"
     },
     "n8n": {
       "nodes": [
@@ -29,6 +33,10 @@
           "type": "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts"
         }
       ]
+    },
+    "dependencies": {},
+    "devDependencies": {
+      "typescript": "^5.3.3"
     }
   }
   
