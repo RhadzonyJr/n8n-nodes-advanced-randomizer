@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+      /* 🎯 Alvo e módulo */
+      "target": "ES2019",
+      "module": "CommonJS",
+  
+      /* 🛠 Diretórios de saída/entrada */
+      "outDir": "dist",
+      "rootDir": ".",
+  
+      /* 📝 Geração de tipos */
+      "declaration": true,
+  
+      /* ⚙️ Ajustes de interoperabilidade e performance */
+      "esModuleInterop": true,
+      "skipLibCheck": true
+    },
+  
+    /* 🗂️ Arquivos a compilar */
+    "include": [
+      "nodes/**/*",
+      "index.ts"              // garante que o ponto de entrada seja compilado
+    ]
+  }
+  

@@ -1,8 +1,15 @@
+/****************************************************************************************
+ * File: nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts
+ * Description: n8n custom node that routes items randomly, by percentage, or sequentially
+ * Author: Rhadzony Jr
+ * License: MIT
+ ****************************************************************************************/
+
 import {
+	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	IExecuteFunctions,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizer.node.options';
@@ -14,89 +21,87 @@ export class AdvancedRandomizer implements INodeType {
 		group: ['transform'],
 		version: 1,
 		description: 'Route executions randomly, by percentage, or sequentially to multiple outputs.',
-		defaults: {
-			name: 'Advanced Randomizer',
-		},
+		defaults: { name: 'Advanced Randomizer' },
+		icon: 'fa:random',
+
+		/* n8n exige número fixo de portas; declaramos 10 (máx permitido nas opções).
+		   Portas sem uso simplesmente não receberão itens. */
 		inputs: ['main'],
-		outputs: ['main'], // Será ajustado dinamicamente conforme os outputs configurados
+		outputs: ['main','main','main','main','main','main','main','main','main','main'],
+
+		/* Rótulos amigáveis que aparecem no editor */
+		outputNames: [
+			'Output 1','Output 2','Output 3','Output 4','Output 5',
+			'Output 6','Output 7','Output 8','Output 9','Output 10',
+		],
+
 		properties: advancedRandomizerNodeOptions,
 	};
 
+	/******************************************************************
+	 * execute()
+	 ******************************************************************/
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 
-		const selectionMethod = this.getNodeParameter('selectionMethod', 0) as string;
-		const outputs = this.getNodeParameter('outputs', 0, []) as {
+		const selectionMethod = this.getNodeParameter('selectionMethod', 0) as
+			| 'random'
+			| 'percentage'
+			| 'sequential';
+
+		const outputsCfg = this.getNodeParameter('outputs', 0, []) as {
 			outputName: string;
 			percentage?: number;
 		}[];
 
-		// 📌 Validação: Soma de porcentagens se selectionMethod = percentage
+		/* ---------- Validação de porcentagem ---------- */
 		if (selectionMethod === 'percentage') {
-			const totalPercentage = outputs.reduce((acc, output) => {
-				return acc + (output.percentage ?? 0);
-			}, 0);
-
-			if (Math.abs(totalPercentage - 100) > 0.01) {
-				throw new Error(`The total percentage across all outputs must equal 100%. Current total: ${totalPercentage.toFixed(2)}%.`);
+			const total = outputsCfg.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
+			if (Math.abs(total - 100) > 0.01) {
+				throw new Error(
+					`The total percentage across all outputs must equal 100 % (got ${total}).`,
+				);
 			}
 		}
 
-		// 📦 Inicializa as saídas
-		const returnData: INodeExecutionData[][] = [];
-		for (let i = 0; i < outputs.length; i++) {
-			returnData.push([]);
-		}
+		/* ---------- Prepara as saídas ---------- */
+		const returnData: INodeExecutionData[][] = Array(10)
+			.fill(null)
+			.map(() => []);
 
-		// 🎲 Método Random
+		/* ---------- Random ---------- */
 		if (selectionMethod === 'random') {
-			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-				const randomIndex = Math.floor(Math.random() * outputs.length);
-				returnData[randomIndex].push(items[itemIndex]);
+			for (const item of items) {
+				const idx = Math.floor(Math.random() * outputsCfg.length);
+				returnData[idx].push(item);
 			}
 		}
 
-		// 🎯 Método Percentage
+		/* ---------- Percentage ---------- */
 		if (selectionMethod === 'percentage') {
-			const ranges: { upperBound: number; index: number }[] = [];
-			let accumulated = 0;
+			let acc = 0;
+			const ranges = outputsCfg.map((o, i) => {
+				acc += o.percentage ?? 0;
+				return { upper: acc, i };
+			});
 
-			for (let i = 0; i < outputs.length; i++) {
-				accumulated += outputs[i].percentage ?? 0;
-				ranges.push({
-					upperBound: accumulated,
-					index: i,
-				});
-			}
-
-			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-				const randomNumber = Math.random() * 100;
-				for (const range of ranges) {
-					if (randomNumber <= range.upperBound) {
-						returnData[range.index].push(items[itemIndex]);
-						break;
-					}
-				}
+			for (const item of items) {
+				const r = Math.random() * 100;
+				const target = ranges.find((rng) => r <= rng.upper);
+				if (target) returnData[target.i].push(item);
 			}
 		}
 
-		// 🔁 Método Sequential
+		/* ---------- Sequential ---------- */
 		if (selectionMethod === 'sequential') {
-			const staticData = this.getWorkflowStaticData('node');
-			let currentIndex = staticData.currentIndex as number | undefined;
-			if (currentIndex === undefined) {
-				currentIndex = 0;
-			}
+			const staticData = this.getWorkflowStaticData('node') as { current?: number };
+			let current = staticData.current ?? 0;
 
-			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-				returnData[currentIndex].push(items[itemIndex]);
-				currentIndex++;
-				if (currentIndex >= outputs.length) {
-					currentIndex = 0;
-				}
+			for (const item of items) {
+				returnData[current].push(item);
+				current = (current + 1) % outputsCfg.length;
 			}
-
-			staticData.currentIndex = currentIndex;
+			staticData.current = current;
 		}
 
 		return returnData;
