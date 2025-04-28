@@ -1,42 +1,31 @@
-{
-    "name": "n8n-nodes-advanced-randomizer",
-    "version": "0.0.1",
-    "description": "An advanced randomizer node for n8n supporting random, percentage, and sequential output routing.",
-    "author": "Rhadzony Jr",
-    "license": "MIT",
-    "main": "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts",
-    "scripts": {
-      "build": "tsc",
-      "prepare": "npm run build"
-    },
-    "keywords": [
-      "n8n",
-      "n8n-node",
-      "randomizer",
-      "percentage",
-      "sequential",
-      "workflow",
-      "automation"
-    ],
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
-    },
-    "homepage": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer#readme",
-    "bugs": {
-      "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer/issues"
-    },
-    "n8n": {
-      "nodes": [
-        {
-          "name": "AdvancedRandomizer",
-          "type": "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts"
-        }
-      ]
-    },
-    "dependencies": {},
-    "devDependencies": {
-      "typescript": "^5.3.3"
-    }
-  }
-  
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project (optional)
+        run: npm run build || echo "No build step"
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
