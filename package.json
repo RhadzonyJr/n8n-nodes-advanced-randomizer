@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-advancedrandomizer2",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Advanced Randomizer node for n8n — route items randomly, by percentage or sequentially.",
   "keywords": [
     "n8n-community-node-package",
