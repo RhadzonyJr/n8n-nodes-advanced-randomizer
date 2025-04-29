@@ -1,19 +1,19 @@
 {
-  "name": "n8n-nodes-advancednode",
+  "name": "n8n-nodes-advanced-randomizer",
   "version": "0.1.0",
-  "description": "Custom Advanced Node for n8n",
+  "description": "Custom Advanced Randomizer for n8n",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
   "homepage": "",
   "author": {
-    "name": "Seu Nome",
-    "email": "seu@email.com"
+    "name": "RhadzonyJR",
+    "email": "rhadst@hotmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/seu-usuario/n8n-nodes-advancednode.git"
+    "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
   },
   "engines": {
     "node": ">=18.10"
@@ -32,7 +32,7 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "dist/nodes/AdvancedNode/AdvancedNode.node.js"
+      "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
     ]
   },
   "dependencies": {

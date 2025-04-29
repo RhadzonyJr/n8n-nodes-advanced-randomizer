@@ -6,16 +6,16 @@ import {
 	IExecuteFunctions,
 } from 'n8n-workflow';
 
-export class AdvancedNode implements INodeType {
+export class AdvancedRandomizer implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Advanced Node',
-		name: 'advancedNode',
-		icon: 'file:AdvancedNode.svg',
+		displayName: 'Advanced Randomizer',
+		name: 'AdvancedRandomizer',
+		icon: 'file:AdvancedRandomizer.svg',
 		group: ['transform'],
 		version: 1,
 		description: 'Node with configurable number of outputs',
 		defaults: {
-			name: 'AdvancedNode',
+			name: 'AdvancedRandomizer',
 		},
 		inputs: ['main'],
 		outputs: Array.from({ length: 10 }, (_, i) => (i + 1).toString()), // [ '1'...'10' ]
