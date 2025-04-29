@@ -9,19 +9,30 @@ import {
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
+/**
+ * Função que gera dinamicamente as saídas com base nas configurações do usuário
+ */
+const configuredOutputs = (parameters: any) => {
+	const outputs = parameters.outputs?.output ?? [];
+	return outputs.map((output: { outputName: string }, index: number) => ({
+		type: 'main',
+		displayName: output?.outputName || `Output ${index + 1}`,
+	}));
+};
+
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizerNode',
-		icon: 'fa:random',
+		icon: 'file:advancedRandomizerNode.svg', // <- agora usando seu SVG
 		group: ['transform'],
 		version: 1,
-		description: 'Route executions based on defined output percentages',
+		description: 'Route executions randomly with customizable outputs and percentages',
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: ['main'] as NodeConnectionType[],
-		outputs: Array.from({ length: 10 }, () => 'main' as NodeConnectionType), // máximo visível
+		inputs: [NodeConnectionType.Main],
+		outputs: `={{(${configuredOutputs})($parameter)}}`,
 		properties: advancedRandomizerNodeOptions,
 	};
 
@@ -34,14 +45,14 @@ export class AdvancedRandomizerNode implements INodeType {
 		) as { outputName: string; percentage: number }[];
 
 		if (cfgOutputs.length < 2) {
-			throw new NodeOperationError(this.getNode(), 'Configure ao menos duas saídas');
+			throw new NodeOperationError(this.getNode(), 'Configure at least two outputs.');
 		}
 
 		const total = cfgOutputs.reduce((sum, o) => sum + (o.percentage ?? 0), 0);
 		if (Math.abs(total - 100) > 0.01) {
 			throw new NodeOperationError(
 				this.getNode(),
-				`A soma das porcentagens deve ser 100%. Valor atual: ${total}%`,
+				`The sum of all percentages must be 100%. Current total: ${total}%`,
 			);
 		}
 
