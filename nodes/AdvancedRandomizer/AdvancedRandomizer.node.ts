@@ -7,6 +7,8 @@ import {
 } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
+	description = {} as any;
+
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const routes = this.getNodeParameter('routes.route', 0, []) as IDataObject[];
