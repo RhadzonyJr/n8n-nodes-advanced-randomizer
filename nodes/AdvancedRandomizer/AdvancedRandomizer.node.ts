@@ -1,15 +1,17 @@
 import {
+	IExecuteFunctions,
+} from 'n8n-core';
+
+import {
 	INodeType,
 	INodeTypeDescription,
 	INodeExecutionData,
-	INodeParameters,
-	IExecuteFunctions,
 } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
-		name: 'AdvancedRandomizer',
+		name: 'advancedRandomizer',
 		icon: 'file:AdvancedRandomizer.svg',
 		group: ['transform'],
 		version: 1,
@@ -18,7 +20,7 @@ export class AdvancedRandomizer implements INodeType {
 			name: 'AdvancedRandomizer',
 		},
 		inputs: ['main'],
-		outputs: Array.from({ length: 10 }, (_, i) => (i + 1).toString()), // [ '1'...'10' ]
+		outputs: Array.from({ length: 10 }, (_, i) => (i + 1).toString()),
 		outputNames: Array.from({ length: 10 }, (_, i) => `Output ${i + 1}`),
 		properties: [
 			{
@@ -37,7 +39,7 @@ export class AdvancedRandomizer implements INodeType {
 				],
 				default: 2,
 				required: true,
-				description: 'Select how many outputs this node should have.',
+				description: 'Select how many outputs this node should have',
 			},
 		],
 	};
@@ -50,8 +52,7 @@ export class AdvancedRandomizer implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			const item = items[i];
-			// Por padrão, envia para a primeira saída
-			returnData[0].push(item);
+			returnData[0].push(item); // envia tudo para a saída 0 por padrão
 		}
 
 		return returnData;
