@@ -26,8 +26,8 @@ export class AdvancedRandomizer implements INodeType {
 			},
 			inputs: [NodeConnectionType.Main],
 			// declaramos o “máximo” de saídas que o node pode ter
-			outputs: Array.from({ length: 10 }, () => NodeConnectionType.Main),
-			outputNames: Array.from({ length: 10 }, (_, i) => i.toString()),
+			outputs: [] as NodeConnectionType[],  // Deixe isso dinâmico
+			outputNames: [] as string[], // Deixe isso dinâmico
 			properties: [
 				{
 					displayName: 'Routes',
@@ -69,6 +69,10 @@ export class AdvancedRandomizer implements INodeType {
 		};
 	}
 
+	/**
+	 * Função execute() que distribui os itens aleatoriamente
+	 * entre as rotas definidas
+	 */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 
@@ -92,12 +96,17 @@ export class AdvancedRandomizer implements INodeType {
 			);
 		}
 
-		// cria N saídas
+		// Prepara as saídas dinâmicas
+		this.description.outputs = Array.from({ length: routes.length }, () => NodeConnectionType.Main);
+		this.description.outputNames = Array.from({ length: routes.length }, (_, i) => `Output ${i}`);
+
+		// Cria as saídas dinâmicas
 		const outputs: INodeExecutionData[][] = Array.from(
 			{ length: routes.length },
 			() => [],
 		);
 
+		// Distribui os itens aleatoriamente para as rotas
 		for (const item of items) {
 			const idx = Math.floor(Math.random() * routes.length); // índice aleatório
 			outputs[idx].push(item);
