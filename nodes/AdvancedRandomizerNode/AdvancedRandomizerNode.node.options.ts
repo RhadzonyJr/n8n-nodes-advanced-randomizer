@@ -5,18 +5,6 @@ import { INodeProperties } from 'n8n-workflow';
  */
 export const advancedRandomizerNodeOptions: INodeProperties[] = [
 	{
-		displayName: 'Selection Method',
-		name: 'selectionMethod',
-		type: 'options',
-		options: [
-			{ name: 'Random',     value: 'random'     },
-			{ name: 'Percentage', value: 'percentage' },
-			{ name: 'Sequential', value: 'sequential' },
-		],
-		default: 'random',
-		description: 'Como a saída será escolhida',          // ← sem ponto final
-	},
-	{
 		displayName: 'Outputs',
 		name: 'outputs',
 		type: 'fixedCollection',
@@ -26,7 +14,10 @@ export const advancedRandomizerNodeOptions: INodeProperties[] = [
 			maxValues: 10,
 		},
 		placeholder: 'Adicionar saída',
-		default: [],
+		default: [
+			{ outputName: 'Output 1', percentage: 50 },
+			{ outputName: 'Output 2', percentage: 50 },
+		],
 		options: [
 			{
 				name: 'output',
@@ -45,9 +36,7 @@ export const advancedRandomizerNodeOptions: INodeProperties[] = [
 						type: 'number',
 						typeOptions: { minValue: 0, maxValue: 100 },
 						default: 0,
-						displayOptions: { show: { '/selectionMethod': ['percentage'] } },
-						description:
-							'Probabilidade para esta saída (usado apenas em “Percentage”)', // ← sem ponto final
+						description: 'Probabilidade para esta saída (a soma deve ser 100%)',
 					},
 				],
 			},
