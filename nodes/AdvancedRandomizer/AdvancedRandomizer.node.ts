@@ -46,46 +46,48 @@ export class AdvancedRandomizer implements INodeType {
         description: 'How many outputs to generate',
       },
       {
-        displayName: 'Output Percentages',
-        name: 'outputPercentages',
-        description: 'Define the percentage for each output (must sum to 100%)',
-        type: 'fixedCollection',
-        placeholder: 'Add Percentage',
-        default: {},
-        options: [
-          {
-            name: 'percentages',
-            displayName: 'Percentages',
-            values: [
-              {
-                displayName: 'Output Index',
-                name: 'index',
-                type: 'number',
-                typeOptions: {
-                  minValue: 0,
-                },
-                default: 0,
-              },
-              {
-                displayName: 'Percentage',
-                name: 'percentage',
-                type: 'number',
-                typeOptions: {
-                  minValue: 0,
-                  maxValue: 100,
-                },
-                default: 50,
-              },
-            ],
-          },
-        ],
-        displayOptions: {
-          show: {
-            mode: ['randomPercentage'],
-          },
-        },
-        required: false,
-      },
+				displayName: 'Output Percentages',
+				name: 'outputPercentages',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				displayOptions: {
+					show: {
+						mode: ['randomPercentage'],
+					},
+				},
+				placeholder: 'Add Output Percentage',
+				options: [
+					{
+						name: 'percentage',
+						displayName: 'Percentage',
+						values: [
+							{
+								displayName: 'Output Index',
+								name: 'outputIndex',
+								type: 'number',
+								typeOptions: {
+									minValue: 0,
+								},
+								default: 0,
+							},
+							{
+								displayName: 'Percentage',
+								name: 'percentage',
+								type: 'number',
+								typeOptions: {
+									minValue: 0,
+									maxValue: 100,
+								},
+								default: 0,
+							},
+						],
+					},
+				],
+				default: {},
+				description: 'Define the percentage for each output (must sum to 100%)',
+			},
     ],
   };
 
