@@ -19,7 +19,7 @@ export class AdvancedRandomizer implements INodeType {
 			version: [1],
 			defaults: {
 				name: 'Advanced Randomizer',
-				icon: 'File:AdvancedRandomizer.svg'
+				icon: 'File:AdvancedRandomizer.svg',
 				color: '#506000',
 			},
 			inputs: [NodeConnectionTypes.Main],
