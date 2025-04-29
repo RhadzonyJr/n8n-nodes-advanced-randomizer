@@ -12,7 +12,9 @@ import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.opt
  * Função que gera dinamicamente as saídas com base nas configurações do usuário
  */
 const configuredOutputs = (parameters: any) => {
-	const outputs = parameters.outputs?.output ?? [];
+	const outputsParam = parameters.outputs?.output;
+	const outputs = Array.isArray(outputsParam) ? outputsParam : [outputsParam];
+	
 	return outputs.map((output: { outputName: string }, index: number) => ({
 		type: 'main',
 		displayName: output?.outputName || `Output ${index + 1}`,
