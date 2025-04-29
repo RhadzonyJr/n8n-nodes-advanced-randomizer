@@ -1,58 +1,83 @@
-import {
+import type {
 	IExecuteFunctions,
-} from 'n8n-core';
-
-import {
+	IDataObject,
+	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	INodeExecutionData,
 } from 'n8n-workflow';
 
-export class AdvancedRandomizer implements INodeType {
+export class AdvancedRandomizerV1 implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizer',
 		icon: 'file:AdvancedRandomizer.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Node with configurable number of outputs',
+		description: 'Route items randomly across multiple outputs',
 		defaults: {
 			name: 'AdvancedRandomizer',
 		},
 		inputs: ['main'],
-		outputs: Array.from({ length: 10 }, (_, i) => (i + 1).toString()),
-		outputNames: Array.from({ length: 10 }, (_, i) => `Output ${i + 1}`),
+		outputs: ['main'],
+		outputNames: [], // preenchido dinamicamente abaixo
 		properties: [
 			{
-				displayName: 'Output Number',
-				name: 'outputNumber',
-				type: 'options',
+				displayName: 'Routes',
+				name: 'routes',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
 				options: [
-					{ name: '2', value: 2 },
-					{ name: '4', value: 4 },
-					{ name: '5', value: 5 },
-					{ name: '6', value: 6 },
-					{ name: '7', value: 7 },
-					{ name: '8', value: 8 },
-					{ name: '9', value: 9 },
-					{ name: '10', value: 10 },
+					{
+						displayName: 'Route',
+						name: 'route',
+						values: [
+							{
+								displayName: 'Rename Output',
+								name: 'renameOutput',
+								type: 'boolean',
+								default: false,
+							},
+							{
+								displayName: 'Output Name',
+								name: 'outputName',
+								type: 'string',
+								default: '',
+								displayOptions: {
+									show: {
+										renameOutput: [true],
+									},
+								},
+							},
+						],
+					},
 				],
-				default: 2,
-				required: true,
-				description: 'Select how many outputs this node should have',
 			},
 		],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const outputNumber = this.getNodeParameter('outputNumber', 0) as number;
+		const routes = this.getNodeParameter('routes.route', 0, []) as IDataObject[];
 
-		const returnData: INodeExecutionData[][] = Array.from({ length: outputNumber }, () => []);
+		const numRoutes = routes.length;
+		if (numRoutes === 0) {
+			throw new Error('At least one route must be defined.');
+		}
+
+		// Prepara as saídas (uma array para cada rota)
+		const returnData: INodeExecutionData[][] = Array.from({ length: numRoutes }, () => []);
 
 		for (let i = 0; i < items.length; i++) {
 			const item = items[i];
-			returnData[0].push(item); // envia tudo para a saída 0 por padrão
+
+			// Escolhe aleatoriamente uma rota
+			const randomIndex = Math.floor(Math.random() * numRoutes);
+
+			// Envia para a rota escolhida
+			returnData[randomIndex].push(item);
 		}
 
 		return returnData;
