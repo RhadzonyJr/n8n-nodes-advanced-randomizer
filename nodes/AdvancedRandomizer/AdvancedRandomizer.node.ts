@@ -1,31 +1,88 @@
-import {
+import type {
 	IExecuteFunctions,
-	INodeType,
-	INodeExecutionData,
 	IDataObject,
-	NodeOperationError,
+	INodeExecutionData,
+	INodeType,
+	INodeTypeDescription,
 } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
-	description = {} as any;
+	/**
+	 * Toda a informação de interface do node fica aqui.
+	 * Isso dispensa a necessidade de description em .json.
+	 */
+	description: INodeTypeDescription = {
+		displayName: 'Advanced Randomizer',
+		name: 'advancedRandomizer',
+		icon: 'file:AdvancedRandomizer.svg',
+		group: ['transform'],
+		version: 1,
+		description: 'Distributes incoming items across any number of routes at random',
+		defaults: {
+			name: 'AdvancedRandomizer',
+		},
+		// ──────────────────────────────────────────────
+		inputs: ['main'] as Array<'main'>,
+		outputs: ['main'] as Array<'main'>, // n8n cria as saídas visuais dinamicamente
+		// ──────────────────────────────────────────────
+		properties: [
+			{
+				displayName: 'Routes',
+				name: 'routes',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Route',
+						name: 'route',
+						values: [
+							{
+								displayName: 'Rename Output',
+								name: 'renameOutput',
+								type: 'boolean',
+								default: false,
+							},
+							{
+								displayName: 'Output Name',
+								name: 'outputName',
+								type: 'string',
+								default: '',
+								displayOptions: {
+									show: {
+										renameOutput: [true],
+									},
+								},
+							},
+						],
+					},
+				],
+			},
+		],
+	};
 
+	/**
+	 * Execução: distribui os itens aleatoriamente entre
+	 * as rotas definidas pelo usuário.
+	 */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const routes = this.getNodeParameter('routes.route', 0, []) as IDataObject[];
 
-		if (!Array.isArray(routes) || routes.length === 0) {
+		if (routes.length === 0) {
 			throw new NodeOperationError(this.getNode(), 'You must define at least one route');
 		}
 
-		const numRoutes = routes.length;
-		const returnData: INodeExecutionData[][] = Array.from({ length: numRoutes }, () => []);
+		const outputs: INodeExecutionData[][] = Array.from({ length: routes.length }, () => []);
 
-		for (let i = 0; i < items.length; i++) {
-			const item = items[i];
-			const randomIndex = Math.floor(Math.random() * numRoutes);
-			returnData[randomIndex].push(item);
+		for (const item of items) {
+			const randomIndex = Math.floor(Math.random() * routes.length);
+			outputs[randomIndex].push(item);
 		}
 
-		return returnData;
+		return outputs;
 	}
 }

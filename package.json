@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-advancedrandomizer2",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Custom Advanced Randomizer Node for n8n",
   "keywords": [
     "n8n-community-node-package"
@@ -30,7 +30,7 @@
     "dist",
     "nodes"
   ],
-  "n8n": {
+    "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
       "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
