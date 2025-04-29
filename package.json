@@ -1,29 +1,24 @@
 {
-  "name": "n8n-nodes-advancedrandomizer2",
-  "version": "0.1.0",
-  "description": "An advanced randomizer node for n8n, supporting random and weighted random output.",
+  "name": "n8n-nodes-advanced-randomizer",
+  "version": "0.0.6",
+  "description": "Advanced Randomizer node for n8n — route items randomly, by percentage or sequentially.",
   "keywords": [
-    "n8n",
     "n8n-community-node-package",
-    "randomizer",
-    "switch",
-    "flow",
-    "router"
+    "n8n-advanced-randomizer",
+    "n8n-node"
   ],
   "license": "MIT",
   "homepage": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer",
   "author": {
-    "name": "Rhadzony Jr",
-    "email": "rhadst@hotmail.com"
+    "name": "Rhadzony Jr"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
+    "url": "git+https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
   },
-  "engines": {
-    "node": ">=18.10"
-  },
+
   "main": "index.js",
+
   "scripts": {
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
@@ -32,24 +27,29 @@
     "lintfix": "eslint nodes package.json --fix",
     "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json"
   },
+
   "files": [
     "dist"
   ],
+
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
+      "dist/nodes/AdvancedRandomizerNode/AdvancedRandomizerNode.node.js"
     ]
   },
+
+  "dependencies": {},
+
   "devDependencies": {
-    "@typescript-eslint/parser": "^7.15.0",
-    "eslint": "^8.56.0",
-    "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "@types/express": "^4.17.6",
+    "@types/request-promise-native": "~1.0.15",
+    "@typescript-eslint/parser": "~5.45",
+    "eslint-plugin-n8n-nodes-base": "^1.11.0",
     "gulp": "^4.0.2",
-    "prettier": "^3.3.2",
-    "typescript": "^5.5.3"
-  },
-  "peerDependencies": {
-    "n8n-workflow": "*"
+    "n8n-core": "*",
+    "n8n-workflow": "*",
+    "prettier": "^2.7.1",
+    "typescript": "~4.8.4"
   }
 }
