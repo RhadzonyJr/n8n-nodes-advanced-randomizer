@@ -4,8 +4,8 @@ import {
   INodeExecutionData,
   IExecuteFunctions,
   NodeApiError,
+	NodeConnectionType,
 } from 'n8n-workflow';
-import { nodeConnectionTypes } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
   description: INodeTypeDescription = {
@@ -18,8 +18,8 @@ export class AdvancedRandomizer implements INodeType {
       name: 'Advanced Randomizer'
     },
     subtitle: '={{"Mode: " + $parameter[\'mode\']}}',
-    inputs: [nodeConnectionTypes.main],
-    outputs: [nodeConnectionTypes.main],
+		inputs: ['main'] as NodeConnectionType[],
+		outputs: Array.from({ length: MAX_OUTPUTS }, () => 'main' as NodeConnectionType) as NodeConnectionType[],
     properties: [
       {
         displayName: 'Mode',
