@@ -23,7 +23,6 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
-    "lint": "eslint nodes credentials package.json",
     "lintfix": "eslint nodes credentials package.json --fix"
   },
   "files": [
