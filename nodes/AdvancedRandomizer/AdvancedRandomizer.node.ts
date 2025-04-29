@@ -8,7 +8,7 @@ import type {
 	NodeParameterValue,
 } from 'n8n-workflow';
 
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
 	description: INodeTypeDescription;
@@ -19,15 +19,14 @@ export class AdvancedRandomizer implements INodeType {
 			version: [1],
 			defaults: {
 				name: 'Advanced Randomizer',
-				icon: 'File:AdvancedRandomizer.svg',
 				color: '#506000',
 			},
-			inputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
 			outputs: [
-				NodeConnectionTypes.Main,
-				NodeConnectionTypes.Main,
-				NodeConnectionTypes.Main,
-				NodeConnectionTypes.Main,
+				NodeConnectionType.Main,
+				NodeConnectionType.Main,
+				NodeConnectionType.Main,
+				NodeConnectionType.Main,
 			],
 			outputNames: ['0', '1', '2', '3'],
 			properties: [
