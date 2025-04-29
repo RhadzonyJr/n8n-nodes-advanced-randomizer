@@ -1,9 +1,10 @@
-import type {
+import {
 	IExecuteFunctions,
 	IDataObject,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 export class AdvancedRandomizerV1 implements INodeType {
@@ -19,7 +20,7 @@ export class AdvancedRandomizerV1 implements INodeType {
 		},
 		inputs: ['main'],
 		outputs: ['main'],
-		outputNames: [], // preenchido dinamicamente abaixo
+		outputNames: [],
 		properties: [
 			{
 				displayName: 'Routes',
@@ -64,10 +65,9 @@ export class AdvancedRandomizerV1 implements INodeType {
 
 		const numRoutes = routes.length;
 		if (numRoutes === 0) {
-			throw new Error('At least one route must be defined.');
+			throw new NodeOperationError(this.getNode(), 'At least one route must be defined');
 		}
 
-		// Prepara as saídas (uma array para cada rota)
 		const returnData: INodeExecutionData[][] = Array.from({ length: numRoutes }, () => []);
 
 		for (let i = 0; i < items.length; i++) {
