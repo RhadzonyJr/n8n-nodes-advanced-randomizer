@@ -30,7 +30,7 @@
     "dist",
     "nodes"
   ],
-    "n8n": {
+  "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
       "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
