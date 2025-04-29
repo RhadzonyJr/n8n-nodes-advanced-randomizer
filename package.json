@@ -1,49 +1,55 @@
 {
   "name": "n8n-nodes-advancedrandomizer2",
-  "version": "0.0.4",
-  "description": "Custom Advanced Randomizer Node for n8n",
+  "version": "0.0.5",
+  "description": "An advanced randomizer node for n8n, supporting random and weighted random output.",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n",
+    "n8n-community-node-package",
+    "randomizer",
+    "switch",
+    "flow",
+    "router"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer#readme",
+  "homepage": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer",
   "author": {
-    "name": "RhadzonyJr",
+    "name": "Rhadzony Jr",
     "email": "rhadst@hotmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
+    "url": "https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
   },
   "engines": {
     "node": ">=18.10"
   },
-  "main": "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
-    "format": "prettier nodes --write",
-    "lint": "eslint nodes package.json",
-    "lintfix": "eslint nodes package.json --fix"
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes credentials package.json"
   },
   "files": [
-    "dist",
-    "nodes"
+    "dist"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/ExampleCredentialsApi.credentials.js",
+      "dist/credentials/HttpBinApi.credentials.js"
+    ],
     "nodes": [
       "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
     ]
-  },
-  "dependencies": {
-    "n8n-core": "^1.0.0",
-    "n8n-workflow": "^1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^7.15.0",
     "eslint": "^8.56.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "gulp": "^4.0.2",
     "prettier": "^3.3.2",
     "typescript": "^5.5.3"
   },
