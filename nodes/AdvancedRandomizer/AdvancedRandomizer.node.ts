@@ -95,7 +95,7 @@ export class AdvancedRandomizer implements INodeType {
     const returnData: INodeExecutionData[][] = Array.from({ length: numberOfOutputs }, () => []);
 
     for (let i = 0; i < items.length; i++) {
-      let outputIndex: number;
+      let outputIndex = 0;
 
       if (mode === 'random') {
         outputIndex = Math.floor(Math.random() * numberOfOutputs);
@@ -112,7 +112,6 @@ export class AdvancedRandomizer implements INodeType {
 
         const random = Math.random() * 100;
         let cumulative = 0;
-        outputIndex = 0;
         for (const p of percentagesCollection) {
           cumulative += p.percentage;
           if (random <= cumulative) {
