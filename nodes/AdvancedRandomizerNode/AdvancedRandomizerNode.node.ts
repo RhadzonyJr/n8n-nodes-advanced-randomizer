@@ -8,14 +8,10 @@ import {
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-/**
- * Função robusta para calcular as saídas com base na configuração do usuário.
- */
 const configuredOutputs = (parameters: any) => {
 	try {
 		const raw = parameters?.outputs?.output;
-
-		if (!raw) return [];
+		const rename = parameters?.renameOutputs ?? false;
 
 		const outputs = Array.isArray(raw)
 			? raw
@@ -25,7 +21,7 @@ const configuredOutputs = (parameters: any) => {
 
 		return outputs.map((output: any, index: number) => ({
 			type: 'main',
-			displayName: output?.outputName || `Output ${index + 1}`,
+			displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
 		}));
 	} catch {
 		return [];
