@@ -15,8 +15,7 @@ export class AdvancedRandomizer implements INodeType {
     description: 'Routes executions randomly or by defined percentages.',
     defaults: {
       name: 'Advanced Randomizer',
-      color: '#FFAA00',
-      icon: 'file:advancedRandomizerNode.svg',
+      color: '#FFAA00'
     },
     subtitle: '={{"Mode: " + $parameter[\'mode\']}}',
     inputs: [NodeConnectionType.Main],
