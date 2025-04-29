@@ -6,7 +6,7 @@ export const advancedRandomizerNodeOptions: INodeProperties[] = [
 		name: 'renameOutputs',
 		type: 'boolean',
 		default: false,
-		description: 'If enabled, you can name each output manually',
+		description: 'Whether to allow manual naming of each output',
 	},
 	{
 		displayName: 'Outputs',
