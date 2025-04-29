@@ -3,9 +3,9 @@ import {
   INodeTypeDescription,
   INodeExecutionData,
   IExecuteFunctions,
-  NodeConnectionTypes,
   NodeApiError,
 } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
   description: INodeTypeDescription = {
