@@ -9,30 +9,34 @@ import {
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
 /**
- * Função que gera dinamicamente as saídas com base nas configurações do usuário
+ * Função robusta para calcular as saídas com base na configuração do usuário.
  */
 const configuredOutputs = (parameters: any) => {
-	const raw = parameters.outputs?.output;
-	if (!raw) return [];
+	try {
+		const raw = parameters?.outputs?.output;
 
-	const outputs = Array.isArray(raw)
-		? raw
-		: typeof raw === 'object'
-		? [raw]
-		: [];
+		if (!raw) return [];
 
-	return outputs.map((output: any, index: number) => ({
-		type: 'main',
-		displayName: output?.outputName || `Output ${index + 1}`,
-	}));
+		const outputs = Array.isArray(raw)
+			? raw
+			: typeof raw === 'object' && Object.keys(raw).length > 0
+			? [raw]
+			: [];
+
+		return outputs.map((output: any, index: number) => ({
+			type: 'main',
+			displayName: output?.outputName || `Output ${index + 1}`,
+		}));
+	} catch {
+		return [];
+	}
 };
-
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
 		name: 'advancedRandomizerNode',
-		icon: 'file:advancedRandomizerNode.svg', // <- agora usando seu SVG
+		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
 		version: 1,
 		description: 'Route executions randomly with customizable outputs and percentages',
@@ -46,11 +50,9 @@ export class AdvancedRandomizerNode implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const cfgOutputs = this.getNodeParameter(
-			'outputs',
-			0,
-			[],
-		) as { outputName: string; percentage: number }[];
+
+		const raw = this.getNodeParameter('outputs', 0) as { output: any };
+		const cfgOutputs = Array.isArray(raw.output) ? raw.output : [raw.output];
 
 		if (cfgOutputs.length < 2) {
 			throw new NodeOperationError(this.getNode(), 'Configure at least two outputs.');
@@ -66,14 +68,12 @@ export class AdvancedRandomizerNode implements INodeType {
 
 		const buckets: INodeExecutionData[][] = Array.from({ length: cfgOutputs.length }, () => []);
 
-		// cria ranges com base nas porcentagens acumuladas
 		let acc = 0;
 		const ranges = cfgOutputs.map((o, i) => {
 			acc += o.percentage;
 			return { upper: acc, idx: i };
 		});
 
-		// distribui os itens com base nas faixas
 		for (const item of items) {
 			const rnd = Math.random() * 100;
 			const bucket = ranges.find((r) => rnd <= r.upper)!;
