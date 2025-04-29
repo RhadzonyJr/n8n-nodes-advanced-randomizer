@@ -7,6 +7,8 @@ import {
 	NodeConnectionType,
 } from 'n8n-workflow';
 
+const MAX_OUTPUTS = 10;
+
 export class AdvancedRandomizer implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Advanced Randomizer',
