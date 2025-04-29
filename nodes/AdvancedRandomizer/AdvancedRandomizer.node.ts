@@ -3,7 +3,8 @@ import {
   INodeTypeDescription,
   INodeExecutionData,
   IExecuteFunctions,
-  NodeConnectionType,
+  NodeConnectionTypes,
+  NodeApiError,
 } from 'n8n-workflow';
 
 export class AdvancedRandomizer implements INodeType {
@@ -12,14 +13,13 @@ export class AdvancedRandomizer implements INodeType {
     name: 'advancedRandomizer',
     group: ['transform'],
     version: 1,
-    description: 'Routes executions randomly or by defined percentages.',
+    description: 'Routes executions randomly or by defined percentages',
     defaults: {
-      name: 'Advanced Randomizer',
-      color: '#FFAA00'
+      name: 'Advanced Randomizer'
     },
     subtitle: '={{"Mode: " + $parameter[\'mode\']}}',
-    inputs: [NodeConnectionType.Main],
-    outputs: [NodeConnectionType.Main],
+    inputs: [NodeConnectionTypes.main],
+    outputs: [NodeConnectionTypes.main],
     properties: [
       {
         displayName: 'Mode',
@@ -30,7 +30,7 @@ export class AdvancedRandomizer implements INodeType {
           { name: 'Random %', value: 'randomPercentage' },
         ],
         default: 'random',
-        description: 'Choose the randomization mode.',
+        description: 'Choose the randomization mode',
       },
       {
         displayName: 'Number of Outputs',
@@ -41,7 +41,7 @@ export class AdvancedRandomizer implements INodeType {
           maxValue: 50,
         },
         default: 2,
-        description: 'How many outputs to generate.',
+        description: 'How many outputs to generate',
       },
       {
         displayName: 'Output Percentages',
@@ -107,7 +107,9 @@ export class AdvancedRandomizer implements INodeType {
         const totalPercentage = percentagesCollection.reduce((sum, p) => sum + p.percentage, 0);
 
         if (totalPercentage !== 100) {
-          throw new Error('Total percentage must equal 100%.');
+          throw new NodeApiError(this.getNode(), {
+            message: 'Total percentage must equal 100%'
+          });
         }
 
         const random = Math.random() * 100;
