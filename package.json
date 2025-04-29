@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-advancedrandomizer",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Custom Advanced Randomizer Node for n8n",
   "keywords": [
     "n8n-community-node-package"
@@ -18,7 +18,7 @@
   "engines": {
     "node": ">=18.10"
   },
-  "main": "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js",
+  "main": "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -33,7 +33,7 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "dist/nodes/AdvancedRandomizer/AdvancedRandomizer.node.js"
+      "nodes/AdvancedRandomizer/AdvancedRandomizer.node.ts"
     ]
   },
   "dependencies": {
