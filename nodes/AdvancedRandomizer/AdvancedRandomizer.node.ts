@@ -24,9 +24,9 @@ export class AdvancedRandomizer implements INodeType {
 				name: 'AdvancedRandomizer',
 				color: '#506000',
 			},
-			inputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
 			// declaramos o “máximo” de saídas que o node pode ter
-			outputs: Array.from({ length: 10 }, () => NodeConnectionTypes.Main),
+			outputs: Array.from({ length: 10 }, () => NodeConnectionType.Main),
 			outputNames: Array.from({ length: 10 }, (_, i) => i.toString()),
 			properties: [
 				{
