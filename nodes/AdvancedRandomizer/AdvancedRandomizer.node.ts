@@ -22,10 +22,9 @@ export class AdvancedRandomizer implements INodeType {
 		defaults: {
 			name: 'AdvancedRandomizer',
 		},
-		// ──────────────────────────────────────────────
-		inputs: ['main'] as Array<'main'>,
-		outputs: ['main'] as Array<'main'>, // n8n cria as saídas visuais dinamicamente
-		// ──────────────────────────────────────────────
+		inputs: ['main'] as ['main'],
+		outputs: ['main'] as ['main'],
+		
 		properties: [
 			{
 				displayName: 'Routes',
