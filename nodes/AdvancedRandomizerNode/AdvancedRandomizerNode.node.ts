@@ -12,14 +12,21 @@ import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.opt
  * Função que gera dinamicamente as saídas com base nas configurações do usuário
  */
 const configuredOutputs = (parameters: any) => {
-	const outputsParam = parameters.outputs?.output;
-	const outputs = Array.isArray(outputsParam) ? outputsParam : [outputsParam];
-	
-	return outputs.map((output: { outputName: string }, index: number) => ({
+	const raw = parameters.outputs?.output;
+	if (!raw) return [];
+
+	const outputs = Array.isArray(raw)
+		? raw
+		: typeof raw === 'object'
+		? [raw]
+		: [];
+
+	return outputs.map((output: any, index: number) => ({
 		type: 'main',
 		displayName: output?.outputName || `Output ${index + 1}`,
 	}));
 };
+
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
