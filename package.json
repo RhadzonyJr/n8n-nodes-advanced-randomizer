@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-advancedrandomizer3",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Advanced Randomizer node for n8n — route items randomly, by percentage or sequentially.",
   "keywords": [
     "n8n-community-node-package",
@@ -17,7 +17,7 @@
     "url": "git+https://github.com/RhadzonyJr/n8n-nodes-advanced-randomizer.git"
   },
 
-  "main": "index.js",
+"main": "dist/index.js",
 
   "scripts": {
     "build": "tsc && gulp build:icons",

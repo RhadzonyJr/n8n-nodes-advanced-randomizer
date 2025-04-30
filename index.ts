@@ -1,4 +1,4 @@
-import { AdvancedRandomizer } from './AdvancedRandomizerNode.node';
+import { AdvancedRandomizer } from './nodes/AdvancedRandomizerNode/AdvancedRandomizerNode.node';
 
 export const nodeTypes = [
 	{

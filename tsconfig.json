@@ -22,8 +22,9 @@
     "outDir": "./dist/"
   },
   "include": [
-    "nodes/AdvancedRandomizerNode/**/*.ts",
+    "nodes/**/*",
     "index.ts",
     "package.json"
-  ]
+]
+
 }
