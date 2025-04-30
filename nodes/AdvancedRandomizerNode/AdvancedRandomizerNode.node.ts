@@ -3,29 +3,26 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	INodeParameters,
 	NodeOperationError,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-const configuredOutputs = (parameters: any) => {
-	try {
-		const raw = parameters?.outputs?.output;
-		const rename = parameters?.renameOutputs ?? false;
+const configuredOutputs = (parameters: INodeParameters) => {
+	const raw = parameters?.outputs?.output;
+	const rename = parameters?.renameOutputs ?? false;
 
-		const outputs = Array.isArray(raw)
-			? raw
-			: typeof raw === 'object' && Object.keys(raw).length > 0
-			? [raw]
-			: [];
+	const outputs = Array.isArray(raw)
+		? raw
+		: typeof raw === 'object' && raw !== null
+		? [raw]
+		: [];
 
-		return outputs.map((output: any, index: number) => ({
-			type: 'main',
-			displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
-		}));
-	} catch {
-		return [];
-	}
+	return outputs.map((output: any, index: number) => ({
+		type: 'main',
+		displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
+	}));
 };
 
 export class AdvancedRandomizerNode implements INodeType {
@@ -34,13 +31,13 @@ export class AdvancedRandomizerNode implements INodeType {
 		name: 'advancedRandomizerNode',
 		icon: 'file:advancedRandomizerNode.svg',
 		group: ['transform'],
-		version: 1,
+		version: 3,
 		description: 'Route executions randomly with customizable outputs and percentages',
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: '={{["main"]}}',
-		outputs: `={{(${configuredOutputs})($parameter)}}`,
+		inputs: ['main'],
+		outputs: configuredOutputs,
 		properties: advancedRandomizerNodeOptions,
 	};
 
