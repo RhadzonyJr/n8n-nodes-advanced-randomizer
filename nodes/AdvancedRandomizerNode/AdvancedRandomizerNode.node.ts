@@ -20,7 +20,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: ['main'],
+		inputs: ['main'] as INodeTypeDescription['inputs'],
 		outputs: `={{(${configuredOutputs.toString()})($parameter)}}`,
 		properties: advancedRandomizerNodeOptions,
 	};
