@@ -3,17 +3,19 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	INodeOutputConfiguration,
 	INodeParameters,
 	NodeOperationError,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-import type { INodeOutputConfiguration, INodeParameters } from 'n8n-workflow';
-
-const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguration[] => {
-	const raw = (parameters?.outputs as { output?: any })?.output;
-	const rename = parameters?.renameOutputs ?? false;
+/**
+ * Gera dinamicamente as saídas do node com base na configuração do usuário.
+ */
+const configuredOutputs: INodeTypeDescription['outputs'] = (parameters: INodeParameters): INodeOutputConfiguration[] => {
+	const raw = (parameters.outputs as { output?: any })?.output;
+	const rename = parameters.renameOutputs ?? false;
 
 	const outputs = Array.isArray(raw)
 		? raw
@@ -22,11 +24,10 @@ const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguratio
 		: [];
 
 	return outputs.map((output: any, index: number) => ({
-		type: 'main',
+		type: 'main' as const,
 		displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
 	}));
 };
-
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
@@ -40,7 +41,7 @@ export class AdvancedRandomizerNode implements INodeType {
 			name: 'Advanced Randomizer',
 		},
 		inputs: ['main'],
-		outputs: configuredOutputs,		
+		outputs: configuredOutputs,
 		properties: advancedRandomizerNodeOptions,
 	};
 
