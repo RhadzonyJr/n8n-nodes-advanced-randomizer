@@ -9,7 +9,9 @@ import {
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-const configuredOutputs: INodeTypeDescription['outputs'] = (parameters) => {
+import type { INodeOutputConfiguration, INodeParameters } from 'n8n-workflow';
+
+const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguration[] => {
 	const raw = (parameters?.outputs as { output?: any })?.output;
 	const rename = parameters?.renameOutputs ?? false;
 
@@ -37,7 +39,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: (parameters: INodeParameters) => ['main'],
+		inputs: ['main'],
 		outputs: configuredOutputs,		
 		properties: advancedRandomizerNodeOptions,
 	};
