@@ -3,29 +3,12 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	INodeOutputConfiguration,
-	INodeParameters,
-	NodeConnectionType,
 	NodeOperationError,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
-
-const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguration[] => {
-	const raw = (parameters.outputs as { output?: any })?.output;
-	const rename = parameters.renameOutputs ?? false;
-
-	const outputs = Array.isArray(raw)
-		? raw
-		: typeof raw === 'object' && raw !== null
-		? [raw]
-		: [];
-
-	return outputs.map((output: any, index: number): INodeOutputConfiguration => ({
-		type: NodeConnectionType.Main,
-		displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
-	}));
-};
+import { configuredOutputs } from './configuredOutputs';
 
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
@@ -39,7 +22,7 @@ export class AdvancedRandomizerNode implements INodeType {
 			name: 'Advanced Randomizer',
 		},
 		inputs: [NodeConnectionType.Main],
-		outputs: configuredOutputs,
+		outputs: `={{(${configuredOutputs.toString()})($parameter)}}`,
 		properties: advancedRandomizerNodeOptions,
 	};
 
