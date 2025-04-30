@@ -5,6 +5,7 @@ import {
 	INodeTypeDescription,
 	INodeOutputConfiguration,
 	INodeParameters,
+	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -21,7 +22,7 @@ const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguratio
 		: [];
 
 	return outputs.map((output: any, index: number): INodeOutputConfiguration => ({
-		type: 'main',
+		type: NodeConnectionType.Main,
 		displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
 	}));
 };
@@ -37,7 +38,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: ['main' as const],
+		inputs: [NodeConnectionType.Main],
 		outputs: configuredOutputs,
 		properties: advancedRandomizerNodeOptions,
 	};
