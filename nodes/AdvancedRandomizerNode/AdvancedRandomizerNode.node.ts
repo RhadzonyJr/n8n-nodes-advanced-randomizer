@@ -1,5 +1,8 @@
-import type { INodeTypeDescription, IVersionedNodeType } from 'n8n-workflow';
-import { VersionedNodeType } from 'n8n-core';
+import type {
+	INodeTypeBaseDescription,
+	IVersionedNodeType,
+} from 'n8n-workflow';
+import { VersionedNodeType } from 'n8n-workflow';
 
 import { AdvancedRandomizerV1 } from './V1/AdvancedRandomizerV1.node';
 import { AdvancedRandomizerV2 } from './V2/AdvancedRandomizerV2.node';
@@ -7,7 +10,7 @@ import { AdvancedRandomizerV3 } from './V3/AdvancedRandomizerV3.node';
 
 export class AdvancedRandomizer extends VersionedNodeType {
 	constructor() {
-		const baseDescription: INodeTypeDescription = {
+		const baseDescription: INodeTypeBaseDescription = {
 			displayName: 'Advanced Randomizer',
 			name: 'advancedRandomizerNode',
 			icon: 'file:advancedRandomizerNode.svg',
