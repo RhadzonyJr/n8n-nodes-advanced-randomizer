@@ -4,7 +4,6 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
-	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
@@ -21,7 +20,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: [NodeConnectionType.Main],
+		inputs: ['main'],
 		outputs: `={{(${configuredOutputs.toString()})($parameter)}}`,
 		properties: advancedRandomizerNodeOptions,
 	};
