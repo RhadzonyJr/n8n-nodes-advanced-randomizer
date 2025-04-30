@@ -10,10 +10,7 @@ import {
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-/**
- * Gera dinamicamente as saídas do node com base na configuração do usuário.
- */
-const configuredOutputs: INodeTypeDescription['outputs'] = (parameters: INodeParameters): INodeOutputConfiguration[] => {
+const configuredOutputs = (parameters: INodeParameters): INodeOutputConfiguration[] => {
 	const raw = (parameters.outputs as { output?: any })?.output;
 	const rename = parameters.renameOutputs ?? false;
 
@@ -23,8 +20,8 @@ const configuredOutputs: INodeTypeDescription['outputs'] = (parameters: INodePar
 		? [raw]
 		: [];
 
-	return outputs.map((output: any, index: number) => ({
-		type: 'main' as const,
+	return outputs.map((output: any, index: number): INodeOutputConfiguration => ({
+		type: 'main',
 		displayName: rename ? output?.outputName || `Output ${index}` : `${index}`,
 	}));
 };
@@ -40,7 +37,7 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: ['main'],
+		inputs: ['main' as const],
 		outputs: configuredOutputs,
 		properties: advancedRandomizerNodeOptions,
 	};
