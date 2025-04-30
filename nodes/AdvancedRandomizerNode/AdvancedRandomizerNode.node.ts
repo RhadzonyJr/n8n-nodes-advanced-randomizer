@@ -9,8 +9,8 @@ import {
 
 import { advancedRandomizerNodeOptions } from './AdvancedRandomizerNode.node.options';
 
-const configuredOutputs = (parameters: INodeParameters) => {
-	const raw = parameters?.outputs?.output;
+const configuredOutputs: INodeTypeDescription['outputs'] = (parameters) => {
+	const raw = (parameters?.outputs as { output?: any })?.output;
 	const rename = parameters?.renameOutputs ?? false;
 
 	const outputs = Array.isArray(raw)
@@ -25,6 +25,7 @@ const configuredOutputs = (parameters: INodeParameters) => {
 	}));
 };
 
+
 export class AdvancedRandomizerNode implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Advanced Randomizer',
@@ -36,8 +37,8 @@ export class AdvancedRandomizerNode implements INodeType {
 		defaults: {
 			name: 'Advanced Randomizer',
 		},
-		inputs: ['main'],
-		outputs: configuredOutputs,
+		inputs: (parameters: INodeParameters) => ['main'],
+		outputs: configuredOutputs,		
 		properties: advancedRandomizerNodeOptions,
 	};
 
